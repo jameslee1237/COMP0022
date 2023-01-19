@@ -2,7 +2,7 @@
 COMP0022 Database and Information Management Systems group 2 project
 
 To run the simple system, go to COMP0022 folder on terminal and run the following: - docker-compose build
-                                                                                   - docker-compose up
+                                                                                   - docker-compose up 
 
 To quit after running docker-compose up: press ctrl + c
 
@@ -15,4 +15,4 @@ To access just the mysql after running the system: 1. If you have ran with docke
                                                    3. You will be asked to enter password which is '123'
                                                    4. mysql bash should open
 
-The system currently creates a mysql image, then creates a movie database and adds all data from movies.csv file(this is from the file we were given for this project) and prints on the terminal first 10 records
+The system currently creates a mysql image, then creates a movie database and adds all data from movies.csv file(this is from the file we were given for this project) and prints on the terminal first 10 records (it will take some time to print results on the terminal as the csv file contains large amoutn of data)
