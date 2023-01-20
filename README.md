@@ -15,4 +15,4 @@ To access just the mysql after running the system: 1. If you have ran with docke
                                                    3. You will be asked to enter password which is '123'
                                                    4. mysql bash should open
 
-The system currently creates a mysql image, then creates a movie database and adds all data from movies.csv file(this is from the file we were given for this project) and prints on the terminal first 10 records (it will take some time to print results on the terminal as the csv file contains large amoutn of data)
+The system currently creates a mysql image and a nginx image, then creates a movie database and adds all data from movies.csv file(this is from the file we were given for this project) and prints on the terminal first 10 records (it will take some time to print results on the terminal as the csv file contains large amoutn of data). To run the web, use localhose:8080
