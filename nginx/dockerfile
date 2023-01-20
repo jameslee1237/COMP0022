@@ -1,0 +1,5 @@
+FROM nginx:latest
+
+WORKDIR /usr/app/web
+
+COPY index.html /usr/share/nginx/html
