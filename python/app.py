@@ -1,6 +1,11 @@
 import mysql.connector
 import pandas as pd
 from mysql.connector import Error
+from flask import Flask
+
+app = Flask(__name__)
+
+temp = {}
 
 class App:
     def __init__(self):
@@ -84,6 +89,7 @@ class App:
         for i in result:
             print(i)
         cursor.close()
+        return result
     
     def close_nconnect(self):
         self.cnx2.close()
@@ -107,9 +113,15 @@ def main():
         print("Error while connecting: ", e)
     if app1.nconnected != False:
         app1.create_table_with_data()
-        app1.print_first_10()
+        global temp
+        temp = app1.print_first_10()
         app1.close_nconnect()
 
+@app.route("/")
+def get_data():
+    global temp
+    return temp
 
 if __name__ == "__main__":
     main()
+    app.run(host="0.0.0.0", port="5001")
