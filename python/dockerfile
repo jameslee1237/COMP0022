@@ -16,4 +16,12 @@ COPY movies.csv ./
 
 COPY app.py ./
 
+WORKDIR /usr/app/src/templates
+
+COPY view_data.html ./
+
+COPY index.html ./
+
+WORKDIR /usr/app/src
+
 CMD ["flask", "run"]

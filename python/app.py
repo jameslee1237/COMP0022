@@ -1,9 +1,11 @@
 import mysql.connector
 import pandas as pd
 from mysql.connector import Error
-from flask import Flask
+from flask import Flask, render_template
 
 app = Flask(__name__)
+
+initial = 0
 
 class App:
     def __init__(self):
@@ -97,6 +99,10 @@ class App:
         self.cnx2.close()
 
 @app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/view_data")
 def get_data():
     app1 = App()
     app1.set_config()
@@ -111,13 +117,12 @@ def get_data():
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)
+        print("Error while connecting: ", e)    
     if app1.nconnected != False:
         app1.create_table_with_data()
-        app1.print_first_10_terminal()
-        data = app1.print_first_10()
+        dataset = app1.print_first_10()
         app1.close_nconnect()
-    return data
+    return render_template("view_data.html", data=dataset)
 
 if __name__ == "__main__":
     app.run(debug=True)
