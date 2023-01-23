@@ -6,8 +6,14 @@ COPY requirements.txt ./
 
 RUN pip install -r ./requirements.txt
 
-EXPOSE 5001
+ENV FLASK_APP app.py
+ENV FLASK_RUN_PORT 8000
+ENV FLASK_RUN_HOST 0.0.0.0
+
+EXPOSE 8000
 
 COPY movies.csv ./
 
 COPY app.py ./
+
+CMD ["flask", "run"]

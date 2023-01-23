@@ -5,8 +5,6 @@ from flask import Flask
 
 app = Flask(__name__)
 
-temp = {}
-
 class App:
     def __init__(self):
         self.rconnected = False
@@ -44,7 +42,7 @@ class App:
             exit()
         else:
             cursor = self.cnx.cursor()
-            cursor.execute("CREATE DATABASE movies")
+            cursor.execute("CREATE DATABASE IF NOT EXISTS movies;")
             cursor.execute("GRANT ALL PRIVILEGES ON movies.* to 'newuser'@'%'")
             cursor.close()
     
@@ -68,7 +66,7 @@ class App:
         cursor.execute("select database();")
         record = cursor.fetchone()
         print("connected to: ", record)
-        cursor.execute('DROP TABLE IF EXISTS moveis_data;')
+        cursor.execute('DROP TABLE IF EXISTS movies_data;')
         cursor.execute("""CREATE TABLE movies_data(movie_ID INT NOT NULL AUTO_INCREMENT,
                                            title VARCHAR(255) NOT NULL,
                                            genre VARCHAR(255) NOT NULL,
@@ -82,21 +80,24 @@ class App:
             self.cnx2.commit()
         cursor.close()
 
+    def print_first_10_terminal(self):
+        result = self.print_first_10()
+        for i in result:
+            print(i)
+        
+
     def print_first_10(self):
         cursor = self.cnx2.cursor()
         cursor.execute("select * FROM movies.movies_data WHERE movie_ID < 10;")
         result = cursor.fetchall()
-        for i in result:
-            print(i)
         cursor.close()
         return result
     
     def close_nconnect(self):
         self.cnx2.close()
 
-
-
-def main():
+@app.route("/")
+def get_data():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -113,15 +114,10 @@ def main():
         print("Error while connecting: ", e)
     if app1.nconnected != False:
         app1.create_table_with_data()
-        global temp
-        temp = app1.print_first_10()
+        app1.print_first_10_terminal()
+        data = app1.print_first_10()
         app1.close_nconnect()
-
-@app.route("/")
-def get_data():
-    global temp
-    return temp
+    return data
 
 if __name__ == "__main__":
-    main()
-    app.run(host="0.0.0.0", port="5001")
+    app.run(debug=True)
