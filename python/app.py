@@ -72,7 +72,7 @@ class App:
         cursor.execute("show tables;")
         r2 = cursor.fetchone()
         print(r2)
-        if "movies_data" in r2:
+        if r2 is not None:
             cursor.close()
             return 0
         else:
