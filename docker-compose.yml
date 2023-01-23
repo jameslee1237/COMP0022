@@ -13,6 +13,8 @@ services:
       start_period: 30s
     ports:
       - "3306:3306"
+    volumes:
+      - "./mysql/db_volume:/var/lib/mysql"
     expose:
       - "3306"
     networks:

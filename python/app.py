@@ -23,6 +23,7 @@ class App:
                        'password': '777',
                        'database': 'testdb'
                       }
+                      
     def get_csv_data(self):
         self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
         self.pdata.head()
@@ -68,19 +69,26 @@ class App:
         cursor.execute("select database();")
         record = cursor.fetchone()
         print("connected to: ", record)
-        cursor.execute('DROP TABLE IF EXISTS movies_data;')
-        cursor.execute("""CREATE TABLE movies_data(movie_ID INT NOT NULL AUTO_INCREMENT,
+        cursor.execute("show tables;")
+        r2 = cursor.fetchone()
+        print(r2)
+        if "movies_data" in r2:
+            cursor.close()
+            return 0
+        else:
+            cursor.execute('DROP TABLE IF EXISTS movies_data;')
+            cursor.execute("""CREATE TABLE movies_data(movie_ID INT NOT NULL AUTO_INCREMENT,
                                            title VARCHAR(255) NOT NULL,
                                            genre VARCHAR(255) NOT NULL,
                                            PRIMARY KEY(movie_ID));""")
 
-        for i, row in self.pdata.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS")
-            sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-        cursor.close()
+            for i, row in self.pdata.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS")
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+            cursor.close()
 
     def print_first_10_terminal(self):
         result = self.print_first_10()

@@ -9,6 +9,8 @@ Press the "view data" button to see first 10 movies in the list (this will take 
 
 To quit after running docker-compose up: press ctrl + c
 
+To quit after running docker-compose up -d: type in docker-compose down
+
 To access just the mysql after running the system: 1. If you have ran with docker-compose up, open another terminal, if you have ran with     docker-compose up -d, then you should be able to use the same terminal
                                                    2. run the command "docker exec -it [container id] mysql -uroot -p 
                                                    3. You will be asked to enter password which is '123'
