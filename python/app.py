@@ -125,9 +125,9 @@ def get_data():
         print("Error while connecting: ", e)    
     if app1.nconnected != False:
         app1.create_table_with_data()
-        dataset = app1.print_first_10()
-        app1.close_nconnect()
-    return render_template("view_data.html", data=dataset)
+        #something = app1.print_first_10()
+        #app1.close_nconnect()
+    return render_template("view_data.html", data=app1.print_first_10())
 
 if __name__ == "__main__":
     app.run(debug=True)
