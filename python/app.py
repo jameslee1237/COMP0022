@@ -5,8 +5,6 @@ from flask import Flask, render_template
 
 app = Flask(__name__)
 
-initial = 0
-
 class App:
     def __init__(self):
         self.rconnected = False
@@ -71,7 +69,6 @@ class App:
         print("connected to: ", record)
         cursor.execute("show tables;")
         r2 = cursor.fetchone()
-        print(r2)
         if r2 is not None:
             cursor.close()
             return 0
