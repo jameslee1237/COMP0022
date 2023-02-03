@@ -1,5 +1,5 @@
 server {
-    listen       80;
+    listen       60;
     server_name  localhost;
     location / {
         proxy_pass   http://pythonapp:8000;
