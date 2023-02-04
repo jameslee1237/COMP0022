@@ -27,6 +27,9 @@ class App:
         self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
         self.pdata.head()
 
+        self.ratings_data = pd.read_csv(r"./ratings.csv", index_col=False, delimiter=',')
+        self.ratings_data.head()
+
     def connect_with_root(self):
         db_host = self.config.get('host')
         db_port = self.config.get('port')
@@ -86,6 +89,20 @@ class App:
                 sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
+            
+            cursor.execute('DROP TABLE IF EXISTS movies_ratings;')
+            cursor.execute("""CREATE TABLE movies_ratings(userId INT NOT NULL,
+                                movie_ID INT NOT NULL,
+                                rating VARCHAR(255) NOT NULL,
+                                timestamp VARCHAR(255) NOT NULL);""")
+
+            for i, row in self.ratings_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS")
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+
             cursor.close()
 
     def print_first_10_terminal(self):
@@ -97,6 +114,13 @@ class App:
     def print_first_10(self):
         cursor = self.cnx2.cursor()
         cursor.execute("select * FROM movies.movies_data WHERE movie_ID < 10;")
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+    
+    def print_first_10_ratings(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("select * FROM movies.movies_ratings WHERE movie_ID < 10;")
         result = cursor.fetchall()
         cursor.close()
         return result
@@ -129,6 +153,29 @@ def get_data():
         #something = app1.print_first_10()
         #app1.close_nconnect()
     return render_template("view_data.html", data=app1.print_first_10())
+
+@app.route("/view_ratings")
+def get_ratings():
+    app1 = App()
+    app1.set_config()
+    app1.get_csv_data()
+    try:
+        app1.connect_with_root()
+    except Error as e:
+        print("Error while connecting: ", e)
+    if app1.rconnected != False:
+        app1.grant_prev()
+        app1.close_connec_root()
+    try:
+        app1.connect_newuser("movies")
+    except Error as e:
+        print("Error while connecting: ", e)    
+    if app1.nconnected != False:
+        app1.create_table_with_data()
+        #something = app1.print_first_10()
+        #app1.close_nconnect()
+    return render_template("view_ratings.html", data=app1.print_first_10_ratings())
+
 
 if __name__ == "__main__":
     app.run(debug=True)

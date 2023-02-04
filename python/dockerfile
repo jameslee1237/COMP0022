@@ -20,6 +20,8 @@ WORKDIR /usr/app/src/templates
 
 COPY view_data.html ./
 
+COPY view_ratings.html ./
+
 COPY index.html ./
 
 WORKDIR /usr/app/src
