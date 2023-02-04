@@ -11,6 +11,7 @@ class App:
         self.nconnected = False
         self.config = {}
         self.pdata = ""
+        self.rdata = ""
 
     def set_config(self):
         self.config = {'host': 'mysql',
@@ -99,7 +100,7 @@ class App:
         result = cursor.fetchall()
         cursor.close()
         return result
-    
+
     def close_nconnect(self):
         self.cnx2.close()
 
