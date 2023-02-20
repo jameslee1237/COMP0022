@@ -1,6 +1,7 @@
 import mysql.connector
 import pandas as pd
 from mysql.connector import Error
+from mysql.connector import errorcode
 from flask import Flask, render_template
 
 app = Flask(__name__)
@@ -10,8 +11,10 @@ class App:
         self.rconnected = False
         self.nconnected = False
         self.config = {}
+
+        self.TABLES = {}
         self.pdata = ""
-        self.rdata = ""
+        self.ratings_data = ""
 
     def set_config(self):
         self.config = {'host': 'mysql',
@@ -72,37 +75,48 @@ class App:
         record = cursor.fetchone()
         print("connected to: ", record)
         cursor.execute("show tables;")
-        r2 = cursor.fetchone()
+        r2 = cursor.fetchall()
+
         if r2 is not None:
+            
             cursor.close()
             return 0
         else:
-            cursor.execute('DROP TABLE IF EXISTS movies_data;')
-            cursor.execute("""CREATE TABLE movies_data(movie_ID INT NOT NULL AUTO_INCREMENT,
-                                           title VARCHAR(255) NOT NULL,
-                                           genre VARCHAR(255) NOT NULL,
-                                           PRIMARY KEY(movie_ID));""")
+            # Create SQL for creating tables
+            self.TABLES['movies_data'] = (
+                "CREATE TABLE `movies_data` ("
+                "  `movie_ID` INT NOT NULL AUTO_INCREMENT,"
+                "  `title` VARCHAR(255) NOT NULL,"
+                "  `genre` VARCHAR(255) NOT NULL,"
+                "  PRIMARY KEY(`movieId`));"
+            )
 
+            cursor.execute(self.TABLES['movies_data'])
+
+            # Populate tables
             for i, row in self.pdata.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS")
-                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
+                sql = "INSERT INTO `movies_data` VALUES (%s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
-            
-            cursor.execute('DROP TABLE IF EXISTS movies_ratings;')
-            cursor.execute("""CREATE TABLE movies_ratings(userId INT NOT NULL,
-                                movie_ID INT NOT NULL,
-                                rating VARCHAR(255) NOT NULL,
-                                timestamp VARCHAR(255) NOT NULL);""")
 
+            self.TABLES['movies_ratings'] = (
+                "CREATE TABLE `movies_ratings` ("
+                "  `userId` INT NOT NULL,"
+                "  `movie_ID` INT NOT NULL,"
+                "  `rating` VARCHAR(255) NOT NULL,"
+                "  `timestamp` VARCHAR(255) NOT NULL);"
+            )
+
+            cursor.execute(self.TABLES['movies_ratings'])
+            
             for i, row in self.ratings_data.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS")
-                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s)"
+                sql = "INSERT INTO `movies_ratings` VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
-
             cursor.close()
 
     def print_first_10_terminal(self):
@@ -113,14 +127,14 @@ class App:
 
     def print_first_10(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("select * FROM movies.movies_data WHERE movie_ID < 10;")
+        cursor.execute("SELECT * FROM `movies_data` WHERE `movie_ID` < 10;")
         result = cursor.fetchall()
         cursor.close()
         return result
     
     def print_first_10_ratings(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("select * FROM movies.movies_ratings WHERE movie_ID < 10;")
+        cursor.execute("SELECT * FROM `movies_ratings` WHERE `movieId` < 10;")
         result = cursor.fetchall()
         cursor.close()
         return result
