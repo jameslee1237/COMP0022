@@ -51,7 +51,7 @@ class App:
         else:
             cursor = self.cnx.cursor()
             cursor.execute("CREATE DATABASE IF NOT EXISTS movies;")
-            cursor.execute("GRANT ALL PRIVILEGES ON movies.* to 'newuser'@'%'")
+            cursor.execute("GRANT ALL PRIVILEGES ON movies.* to 'newuser'@'%';")
             cursor.close()
     
     def close_connec_root(self):
@@ -78,17 +78,34 @@ class App:
         r2 = cursor.fetchall()
 
         if r2 is not None:
+            cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
+            self.TABLES['movies_ratings'] = (
+                "CREATE TABLE movies_ratings ("
+                "  user_ID INT NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  rating VARCHAR(255) NOT NULL,"
+                "  timestamp VARCHAR(255) NOT NULL);"
+            )
+
+            cursor.execute(self.TABLES['movies_ratings'])
             
+            for i, row in self.ratings_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS")
+                sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
             cursor.close()
             return 0
         else:
             # Create SQL for creating tables
+            cursor.execute("DROP TABLE IF EXISTS movies_data;")
             self.TABLES['movies_data'] = (
-                "CREATE TABLE `movies_data` ("
-                "  `movie_ID` INT NOT NULL AUTO_INCREMENT,"
-                "  `title` VARCHAR(255) NOT NULL,"
-                "  `genre` VARCHAR(255) NOT NULL,"
-                "  PRIMARY KEY(`movieId`));"
+                "CREATE TABLE movies_data ("
+                "  movie_ID INT NOT NULL AUTO_INCREMENT,"
+                "  title VARCHAR(255) NOT NULL,"
+                "  genre VARCHAR(255) NOT NULL,"
+                "  PRIMARY KEY(movie_ID));"
             )
 
             cursor.execute(self.TABLES['movies_data'])
@@ -97,26 +114,11 @@ class App:
             for i, row in self.pdata.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS")
-                sql = "INSERT INTO `movies_data` VALUES (%s, %s, %s)"
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
 
-            self.TABLES['movies_ratings'] = (
-                "CREATE TABLE `movies_ratings` ("
-                "  `userId` INT NOT NULL,"
-                "  `movie_ID` INT NOT NULL,"
-                "  `rating` VARCHAR(255) NOT NULL,"
-                "  `timestamp` VARCHAR(255) NOT NULL);"
-            )
-
-            cursor.execute(self.TABLES['movies_ratings'])
             
-            for i, row in self.ratings_data.iterrows():
-                if i == 0:
-                    print("INSERTING RECORDS")
-                sql = "INSERT INTO `movies_ratings` VALUES (%s, %s, %s, %s)"
-                cursor.execute(sql, tuple(row))
-                self.cnx2.commit()
             cursor.close()
 
     def print_first_10_terminal(self):
@@ -127,14 +129,14 @@ class App:
 
     def print_first_10(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM `movies_data` WHERE `movie_ID` < 10;")
+        cursor.execute("SELECT * FROM movies.movies_data WHERE movie_ID < 10;")
         result = cursor.fetchall()
         cursor.close()
         return result
     
     def print_first_10_ratings(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM `movies_ratings` WHERE `movieId` < 10;")
+        cursor.execute("SELECT * FROM movies.movies_ratings WHERE movie_ID < 10;")
         result = cursor.fetchall()
         cursor.close()
         return result
