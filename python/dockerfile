@@ -22,6 +22,10 @@ COPY view_data.html ./
 
 COPY view_ratings.html ./
 
+COPY view_links.html ./
+
+COPY view_tags.html ./
+
 COPY index.html ./
 
 WORKDIR /usr/app/src
