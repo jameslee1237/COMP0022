@@ -38,11 +38,11 @@ class App:
         self.ratings_data.head()
         
         self.links_data = pd.read_csv(r"./links.csv", index_col=False, delimiter=',')
-        self.links_data.fillna(0)
+        self.links_data.fillna(0,inplace=True)
         self.links_data.head()
         
         self.tags_data = pd.read_csv(r"./tags.csv", index_col=False, delimiter=',')
-        self.tags_data.fillna(0)
+        self.tags_data.fillna(0,inplace=True)
         self.tags_data.head()
 
     def connect_with_root(self):
@@ -139,7 +139,7 @@ class App:
             else:
                 print("OK", flush=True)
 
-        # Populate tables
+        #Populate tables
         for i, row in self.pdata.iterrows():
             if i == 0:
                 print("INSERTING RECORDS", flush=True)
