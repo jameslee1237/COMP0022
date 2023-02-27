@@ -30,30 +30,21 @@ class App:
                       }
                       
     def get_csv_data(self):
-        #self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
-        self.pdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\movies.csv", index_col=False, delimiter=',')
+        self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
         self.pdata.fillna(0)
         self.pdata.head()
 
-        #self.ratings_data = pd.read_csv(r"./ratings.csv", index_col=False, delimiter=',')
-        self.ratings_data = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\ratings.csv", index_col=False, delimiter=',')
+        self.ratings_data = pd.read_csv(r"./ratings.csv", index_col=False, delimiter=',')
         self.ratings_data.fillna(0)
         self.ratings_data.head()
         
-        #self.links_data = pd.read_csv(r"./links.csv", index_col=False, delimiter=',')
-        self.links_data = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\links.csv", index_col=False, delimiter=',')
-        self.links_data.fillna(0)
+        self.links_data = pd.read_csv(r"./links.csv", index_col=False, delimiter=',')
+        self.links_data.fillna(0,inplace=True)
         self.links_data.head()
         
-        #self.tags_data = pd.read_csv(r"./tags.csv", index_col=False, delimiter=',')
-        self.tags_data = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\tags.csv", index_col=False, delimiter=',')
-        self.tags_data.fillna(0)
+        self.tags_data = pd.read_csv(r"./tags.csv", index_col=False, delimiter=',')
+        self.tags_data.fillna(0,inplace=True)
         self.tags_data.head()
-
-    #def get_remainder_movie_info(self):
-        #movies_df = pd.read_csv(r"./rotten_tomatoes_movies.csv", index_col=False, delimiter=',')
-        #reviews_df = pd.read_csv(r"./rottoen_tomatoes_critic_reviews.csv", index_col=False, delimiter=',')
-        
 
     def connect_with_root(self):
         db_host = self.config.get('host')
@@ -98,130 +89,93 @@ class App:
         # print("connected to: ", record)
         cursor.execute("show tables;")
         r2 = cursor.fetchall()
-        print(r2, flush=True)
+        if r2 is not None:
+            cursor.close()
+            return 0
+        else:
+            print(r2, flush=True)
 
 
-        # Create SQL for creating tables
-        cursor.execute("DROP TABLE IF EXISTS movies_data;")
-        cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
-        cursor.execute("DROP TABLE IF EXISTS movies_links;")
-        cursor.execute("DROP TABLE IF EXISTS movies_tags;")
-        
+            # Create SQL for creating tables
+            cursor.execute("DROP TABLE IF EXISTS movies_data;")
+            cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
+            cursor.execute("DROP TABLE IF EXISTS movies_links;")
+            cursor.execute("DROP TABLE IF EXISTS movies_tags;")
+            
 
-        self.TABLES['movies_data'] = (
-            "CREATE TABLE movies_data ("
-            "  movie_ID INT NOT NULL AUTO_INCREMENT,"
-            "  title VARCHAR(255) NOT NULL,"
-            "  genre VARCHAR(255) NOT NULL,"
-            "  ratings INT NOT NULL,"
-            "  content VARCHAR(255) NOT NULL,"
-            "  director VARCHAR(255) NOT NULL,"
-            "  lead_actors VARCHAR(255) NOT NULL,"
-            "  rotten_tomatoes INT NOT NULL,"
-            "  tags VARCHAR(255) NOT NULL,"
-            "  PRIMARY KEY(movie_ID));"
-        )
-        self.TABLES['movies_ratings'] = (
-            "CREATE TABLE movies_ratings ("
-            "  user_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  rating VARCHAR(255) NOT NULL,"
-            "  timestamp VARCHAR(255) NOT NULL);"
-        )
+            self.TABLES['movies_data'] = (
+                "CREATE TABLE movies_data ("
+                "  movie_ID INT NOT NULL AUTO_INCREMENT,"
+                "  title VARCHAR(255) NOT NULL,"
+                "  genre VARCHAR(255) NOT NULL,"
+                "  PRIMARY KEY(movie_ID));"
+            )
+            self.TABLES['movies_ratings'] = (
+                "CREATE TABLE movies_ratings ("
+                "  user_ID INT NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  rating VARCHAR(255) NOT NULL,"
+                "  timestamp VARCHAR(255) NOT NULL);"
+            )
+            self.TABLES['movies_links'] = (
+                "CREATE TABLE movies_links ("
+                "  movie_ID INT NOT NULL,"
+                "  imdbId VARCHAR(255) NOT NULL,"
+                "  tmdbId VARCHAR(255) NOT NULL);"
+            )
+            self.TABLES['movies_tags'] = (
+                "CREATE TABLE movies_tags ("
+                "  user_ID INT NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  tag VARCHAR(255) NOT NULL,"
+                "  timestamp VARCHAR(255) NOT NULL);"
+            )
 
-        self.TABLES['genres'] = (
-            "CREATE TABLE genres ("
-            "   genre_ID INT NOT NULL AUTO_INCREMENT,"
-            "   genre VARCHAR(255) NOT NULL,"
-            "   PRIMARY KEY(genre_ID));"
-        )
-
-        self.TABLES['genres_movies'] = (
-            "CREATE TABLE genres_movies ("
-            "  ID INT NOT NULL AUTO_INCREMENT,"
-            "  genre_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  PRIMARY KEY(ID));"
-        )
-
-        self.TABLES['Dates'] = (
-            "CREATE TABLE Dates ("
-            "  date_ID INT NOT NULL AUTO_INCREMENT,"
-            "  date DATE NOT NULL,"
-            "  PRIMARY KEY(date_ID));"
-        )
-
-        self.TABLES['movies_dates'] = (
-            "CREATE TABLE movies_dates ("
-            "  ID INT NOT NULL AUTO_INCREMENT,"
-            "  date_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  PRIMARY KEY(ID));"
-        )
-
-        self.TABLES['users'] = (
-            "CREATE TABLE users ("
-            "  user_ID INT NOT NULL AUTO_INCREMENT,"
-            "  PRIMARY KEY(user_ID));"
-        )
-
-        self.TABLES['movies_links'] = (
-            "CREATE TABLE movies_links ("
-            "  movie_ID INT NOT NULL,"
-            "  imdbId VARCHAR(255) NOT NULL,"
-            "  tmdbId VARCHAR(255) NOT NULL);"
-        )
-        self.TABLES['movies_tags'] = (
-            "CREATE TABLE movies_tags ("
-            "  user_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  tag VARCHAR(255) NOT NULL,"
-            "  timestamp VARCHAR(255) NOT NULL);"
-        )
-
-        for table_name in self.TABLES:
-            table_description = self.TABLES[table_name]
-            try:
-                print("Creating table {}: ".format(table_name), end='', flush=True)
-                cursor.execute(table_description)
-            except mysql.connector.Error as err:
-                if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                    print("already exists.", flush=True)
+            for table_name in self.TABLES:
+                table_description = self.TABLES[table_name]
+                try:
+                    print("Creating table {}: ".format(table_name), end='', flush=True)
+                    cursor.execute(table_description)
+                except mysql.connector.Error as err:
+                    if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                        print("already exists.", flush=True)
+                    else:
+                        print(err.msg, flush=True)
                 else:
-                    print(err.msg, flush=True)
-            else:
-                print("OK", flush=True)
+                    print("OK", flush=True)
 
-        # Populate tables
-        for i, row in self.pdata.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
+            #Populate tables
+            for i, row in self.pdata.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+            
+            for i, row in self.ratings_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+
+            for i, row in self.links_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+                
+            for i, row in self.tags_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+                
+            cursor.close()
+            
         
-        for i, row in self.ratings_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-
-        for i, row in self.links_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-            
-        for i, row in self.tags_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-            
-        cursor.close()
 
     def print_first_10_terminal(self):
         result = self.print_first_10()
