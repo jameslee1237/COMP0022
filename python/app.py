@@ -88,87 +88,93 @@ class App:
         # print("connected to: ", record)
         cursor.execute("show tables;")
         r2 = cursor.fetchall()
-        print(r2, flush=True)
+        if r2 is not None:
+            cursor.close()
+            return 0
+        else:
+            print(r2, flush=True)
 
 
-        # Create SQL for creating tables
-        cursor.execute("DROP TABLE IF EXISTS movies_data;")
-        cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
-        cursor.execute("DROP TABLE IF EXISTS movies_links;")
-        cursor.execute("DROP TABLE IF EXISTS movies_tags;")
-        
+            # Create SQL for creating tables
+            cursor.execute("DROP TABLE IF EXISTS movies_data;")
+            cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
+            cursor.execute("DROP TABLE IF EXISTS movies_links;")
+            cursor.execute("DROP TABLE IF EXISTS movies_tags;")
+            
 
-        self.TABLES['movies_data'] = (
-            "CREATE TABLE movies_data ("
-            "  movie_ID INT NOT NULL AUTO_INCREMENT,"
-            "  title VARCHAR(255) NOT NULL,"
-            "  genre VARCHAR(255) NOT NULL,"
-            "  PRIMARY KEY(movie_ID));"
-        )
-        self.TABLES['movies_ratings'] = (
-            "CREATE TABLE movies_ratings ("
-            "  user_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  rating VARCHAR(255) NOT NULL,"
-            "  timestamp VARCHAR(255) NOT NULL);"
-        )
-        self.TABLES['movies_links'] = (
-            "CREATE TABLE movies_links ("
-            "  movie_ID INT NOT NULL,"
-            "  imdbId VARCHAR(255) NOT NULL,"
-            "  tmdbId VARCHAR(255) NOT NULL);"
-        )
-        self.TABLES['movies_tags'] = (
-            "CREATE TABLE movies_tags ("
-            "  user_ID INT NOT NULL,"
-            "  movie_ID INT NOT NULL,"
-            "  tag VARCHAR(255) NOT NULL,"
-            "  timestamp VARCHAR(255) NOT NULL);"
-        )
+            self.TABLES['movies_data'] = (
+                "CREATE TABLE movies_data ("
+                "  movie_ID INT NOT NULL AUTO_INCREMENT,"
+                "  title VARCHAR(255) NOT NULL,"
+                "  genre VARCHAR(255) NOT NULL,"
+                "  PRIMARY KEY(movie_ID));"
+            )
+            self.TABLES['movies_ratings'] = (
+                "CREATE TABLE movies_ratings ("
+                "  user_ID INT NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  rating VARCHAR(255) NOT NULL,"
+                "  timestamp VARCHAR(255) NOT NULL);"
+            )
+            self.TABLES['movies_links'] = (
+                "CREATE TABLE movies_links ("
+                "  movie_ID INT NOT NULL,"
+                "  imdbId VARCHAR(255) NOT NULL,"
+                "  tmdbId VARCHAR(255) NOT NULL);"
+            )
+            self.TABLES['movies_tags'] = (
+                "CREATE TABLE movies_tags ("
+                "  user_ID INT NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  tag VARCHAR(255) NOT NULL,"
+                "  timestamp VARCHAR(255) NOT NULL);"
+            )
 
-        for table_name in self.TABLES:
-            table_description = self.TABLES[table_name]
-            try:
-                print("Creating table {}: ".format(table_name), end='', flush=True)
-                cursor.execute(table_description)
-            except mysql.connector.Error as err:
-                if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
-                    print("already exists.", flush=True)
+            for table_name in self.TABLES:
+                table_description = self.TABLES[table_name]
+                try:
+                    print("Creating table {}: ".format(table_name), end='', flush=True)
+                    cursor.execute(table_description)
+                except mysql.connector.Error as err:
+                    if err.errno == errorcode.ER_TABLE_EXISTS_ERROR:
+                        print("already exists.", flush=True)
+                    else:
+                        print(err.msg, flush=True)
                 else:
-                    print(err.msg, flush=True)
-            else:
-                print("OK", flush=True)
+                    print("OK", flush=True)
 
-        #Populate tables
-        for i, row in self.pdata.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
+            #Populate tables
+            for i, row in self.pdata.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+            
+            for i, row in self.ratings_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+
+            for i, row in self.links_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+                
+            for i, row in self.tags_data.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+                self.cnx2.commit()
+                
+            cursor.close()
+            
         
-        for i, row in self.ratings_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-
-        for i, row in self.links_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-            
-        for i, row in self.tags_data.iterrows():
-            if i == 0:
-                print("INSERTING RECORDS", flush=True)
-            sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
-            cursor.execute(sql, tuple(row))
-            self.cnx2.commit()
-            
-        cursor.close()
 
     def print_first_10_terminal(self):
         result = self.print_first_10()
