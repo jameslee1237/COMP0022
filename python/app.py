@@ -216,7 +216,7 @@ class App:
 
     def search_movie(self, movie):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_data WHERE title LIKE %s;", (movie,))
+        cursor.execute("SELECT * FROM movies.movies_data WHERE title LIKE" + "'%" + movie + "%';")
         result = cursor.fetchall()
         cursor.close()
         return result
@@ -319,6 +319,8 @@ def search():
 
 @app.route("/result", methods=["GET", "POST"])
 def result():
+    if request.method == "GET":
+        return f"The URL was accessed directly. Try going to '/search'"
     if request.method == "POST":
         result = request.form.get("search")
         app1 = App()
