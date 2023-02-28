@@ -2,7 +2,7 @@ import mysql.connector
 import pandas as pd
 from mysql.connector import Error
 from mysql.connector import errorcode
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 
 app = Flask(__name__)
@@ -214,6 +214,13 @@ class App:
     def close_nconnect(self):
         self.cnx2.close()
 
+    def search_movie(self, movie):
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT * FROM movies.movies_data WHERE title LIKE %s;", (movie,))
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -306,13 +313,38 @@ def get_tags():
         #app1.close_nconnect()
     return render_template("view_tags.html", data=app1.print_first_10_tags())
 
+@app.route("/search",  methods=["GET", "POST"])
+def search():
+    return render_template("search.html")
+
+@app.route("/result", methods=["GET", "POST"])
+def result():
+    if request.method == "POST":
+        result = request.form.get("search")
+        app1 = App()
+        app1.set_config()
+        app1.get_csv_data()
+        try:
+            app1.connect_with_root()
+        except Error as e:
+            print("Error while connecting: ", e)
+        if app1.rconnected != False:
+            app1.grant_prev()
+            app1.close_connec_root()
+        try:
+            app1.connect_newuser("movies")
+        except Error as e:
+            print("Error while connecting: ", e)    
+        if app1.nconnected != False:
+            movied = app1.search_movie(result)
+            print(movied, flush=True)
+        return render_template("result.html", result=movied)
 
 if __name__ == "__main__":
-    #app.run(debug=True)
-    app1 = App()
-    app1.set_config()
-    app1.get_csv_data()
-    app1.get_remainder_movie_info()
+    app.run(debug=True)
+    #app1 = App()
+    #app1.set_config()
+    #app1.get_csv_data()
 
 
 

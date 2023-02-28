@@ -28,6 +28,10 @@ COPY view_tags.html ./
 
 COPY index.html ./
 
+COPY result.html ./
+
+COPY search.html ./
+
 WORKDIR /usr/app/src
 
 CMD ["flask", "run"]
