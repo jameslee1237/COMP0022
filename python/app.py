@@ -1,5 +1,6 @@
 import mysql.connector
 import pandas as pd
+from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
 from flask import Flask, render_template, request
@@ -11,6 +12,7 @@ class App:
     def __init__(self):
         self.rconnected = False
         self.nconnected = False
+        self.check = False
         self.config = {}
 
         self.TABLES = {}
@@ -31,6 +33,7 @@ class App:
                       
     def get_csv_data(self):
         self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
+        #self.pdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\movies.csv", index_col=False, delimiter=',')
         self.pdata.fillna(0)
         self.pdata.head()
 
@@ -84,18 +87,9 @@ class App:
     
     def create_table_with_data(self):
         cursor = self.cnx2.cursor()
-        # cursor.execute("select database();")
-        # record = cursor.fetchone()
-        # print("connected to: ", record)
-        cursor.execute("show tables;")
-        r2 = cursor.fetchall()
-        if r2 is not None:
-            cursor.close()
+        if not self.check:
             return 0
         else:
-            print(r2, flush=True)
-
-
             # Create SQL for creating tables
             cursor.execute("DROP TABLE IF EXISTS movies_data;")
             cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
@@ -108,6 +102,12 @@ class App:
                 "  movie_ID INT NOT NULL AUTO_INCREMENT,"
                 "  title VARCHAR(255) NOT NULL,"
                 "  genre VARCHAR(255) NOT NULL,"
+                "  content VARCHAR(255) NOT NULL,"
+                "  director VARCHAR(255) NOT NULL,"
+                "  lead_actor VARCHAR(255) NOT NULL,"
+                "  rotten_tomatoes VARCHAR(255) NOT NULL,"
+                "  rating VARCHAR(255) NOT NULL,"
+                "  tags VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_ratings'] = (
@@ -143,12 +143,17 @@ class App:
                         print(err.msg, flush=True)
                 else:
                     print("OK", flush=True)
+            
+            #format pdata
+            self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
+            self.pdata.fillna("N/A")
 
             #Populate tables
             for i, row in self.pdata.iterrows():
+                row = row.fillna(0)
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
-                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s)"
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
             
@@ -172,8 +177,8 @@ class App:
                 sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
                 self.cnx2.commit()
-                
             cursor.close()
+            return 0
             
         
 
@@ -221,6 +226,60 @@ class App:
         cursor.close()
         return result
 
+    def get_movie_info(self):
+        try:
+            self.connect_with_root()
+            cursor = self.cnx.cursor()
+            cursor.execute("SELECT * FROM movies.movies_data LIMIT 1;")
+            result = cursor.fetchall()
+            cursor.execute("SELECT COUNT(*) FROM movies.movies_data;")
+            result2 = cursor.fetchall()
+            cursor.close()
+            self.close_connec_root()
+            if result != []:
+                if int(result2[0][0]) == 9742:
+                    self.check = False
+                    return 0
+                else:
+                    self.check = True
+                    pass
+            else:
+                self.check = True
+                pass
+        except:
+            self.check = True
+            pass            
+        rdata = pd.read_csv(r"./RTmovies.csv", index_col=False, delimiter=',')
+        #rdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\RTmovies.csv", index_col=False, delimiter=',')
+        rdata.fillna(0)
+        rdata.head()
+        titles = rdata['movie_title'].tolist()
+        dbtitles = self.pdata['title'].tolist()
+        self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['content', 'director', 'lead_actors', 'rotten_tomato'], fill_value=0, axis=1)
+        count = 0
+        for title in dbtitles:
+            ntitle = title[:title.rfind('(')][:-1]
+            if ntitle in titles:
+                idx = titles.index(ntitle)
+                data = rdata.iloc[idx]
+                w, x, y, z1, z2 = data['content_rating'], data['directors'], data['actors'], data['tomatometer_rating'], data['audience_rating']
+                try:
+                    y = y.split(',')[0] + ", " + y.split(',')[1]
+                except IndexError:
+                    y = y.split(',')[0]
+                except AttributeError:
+                    y = 0
+                score = str(z1).split('.')[0] + '%, ' + str(z2).split('.')[0] + '%'
+                self.pdata.loc[self.pdata['title'] == title, 'content'] = w
+                self.pdata.loc[self.pdata['title'] == title, 'director'] = x
+                self.pdata.loc[self.pdata['title'] == title, 'lead_actors'] = y
+                self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = score
+            else:
+                self.pdata.loc[self.pdata['title'] == title, 'content'] = "N/A"
+                self.pdata.loc[self.pdata['title'] == title, 'director'] = "N/A"
+                self.pdata.loc[self.pdata['title'] == title, 'lead_actors'] = "N/A"
+                self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = "N/A"
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -230,21 +289,20 @@ def get_data():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
+    app1.get_movie_info()
     try:
         app1.connect_with_root()
     except Error as e:
-        print("Error while connecting: ", e)
+        print("Error while connecting: ", e, flush=True)
     if app1.rconnected != False:
         app1.grant_prev()
         app1.close_connec_root()
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)    
+        print("Error while connecting: ", e, flush=True)    
     if app1.nconnected != False:
         app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
     return render_template("view_data.html", data=app1.print_first_10())
 
 @app.route("/view_ratings")
@@ -339,14 +397,17 @@ def result():
             print("Error while connecting: ", e)    
         if app1.nconnected != False:
             movied = app1.search_movie(result)
-            print(movied, flush=True)
-        return render_template("result.html", result=movied)
+        if movied != []:
+            return render_template("result.html", result=movied)
+        else:
+            return render_template("result.html", result="No results found")
 
 if __name__ == "__main__":
     app.run(debug=True)
     #app1 = App()
     #app1.set_config()
     #app1.get_csv_data()
+    #app1.get_movie_info()
 
 
 

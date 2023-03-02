@@ -12,25 +12,13 @@ ENV FLASK_RUN_HOST 0.0.0.0
 
 EXPOSE 8000
 
-COPY movies.csv links.csv ratings.csv tags.csv ./
+COPY movies.csv links.csv ratings.csv tags.csv RTmovies.csv ./
 
 COPY app.py ./
 
 WORKDIR /usr/app/src/templates
 
-COPY view_data.html ./
-
-COPY view_ratings.html ./
-
-COPY view_links.html ./
-
-COPY view_tags.html ./
-
-COPY index.html ./
-
-COPY result.html ./
-
-COPY search.html ./
+COPY view_data.html view_ratings.html view_links.html view_tags.html index.html result.html search.html ./
 
 WORKDIR /usr/app/src
 
