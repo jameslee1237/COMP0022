@@ -16,9 +16,11 @@ COPY movies.csv links.csv ratings.csv tags.csv RTmovies.csv ./
 
 COPY app.py ./
 
+COPY styles.css ./
+
 WORKDIR /usr/app/src/templates
 
-COPY view_data.html view_ratings.html view_links.html view_tags.html index.html result.html search.html ./
+COPY templates/base.html templates/index.html templates/view_data.html templates/view_ratings.html templates/view_links.html templates/view_tags.html templates/result.html templates/search.html ./
 
 WORKDIR /usr/app/src
 

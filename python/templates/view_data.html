@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %} View Data {% endblock %}
+
+{% block content %}
+    <table>
+        <thead>
+        <tr>
+            <th>movie ID</th>
+            <th>title</th>
+            <th>genre</th>
+            <th>content rating</th>
+            <th>Director</th>
+            <th>Lead actors</th>
+            <th>Rotten tomato<br>(critic, audience)</th>
+            <th>rating</th>
+            <th>tags</th>
+        </tr>
+        </thead>    
+        <tbody>
+        {% for row in data %}    
+            <tr>
+                <td>{{row[0]}}</td>
+                <td>{{row[1]}}</td>
+                <td>{{row[2]}}</td>
+                <td>{{row[3]}}</td>
+                <td>{{row[4]}}</td>
+                <td>{{row[5]}}</td>
+                <td>{{row[6]}}</td>
+                <td>{{row[7]}}</td>
+                <td>{{row[8]}}</td>
+                <td>{{row[9]}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
