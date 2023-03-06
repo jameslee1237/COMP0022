@@ -292,20 +292,26 @@ class App:
                 self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = "N/A"
 
     def fill_rating(self):
-        self.connect_with_root()
-        cursor = self.cnx.cursor()
-        movieID_list = self.pdata['movieId'].tolist()
-        for ID in movieID_list:
-            cursor.execute("SELECT AVG(rating) FROM movies.movies_ratings WHERE movie_ID = " + str(ID) + ";")
-            rating = round(float(cursor.fetchall()[0][0]), 1)
-            cursor.execute("SELECT title FROM movies.movies_data WHERE movie_ID = " + str(ID) + ";")
-            title = cursor.fetchall()[0][0]
-            print(title, flush=True)
-            break
+        self.connect_newuser("movies")
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT rating FROM movies_data WHERE movie_ID = 1;")
+        result = cursor.fetchone()[0]
+        if result != "N/A":
+            pass
+        else:
+            movieID_list = self.pdata['movieId'].tolist()
+            for ID in movieID_list:
+                cursor.execute("SELECT AVG(rating) FROM movies_ratings WHERE movie_ID = " + str(ID) + ";")
+                try:
+                    r = cursor.fetchall()[0][0]
+                    rating = round(float(r), 1)
+                    cursor.execute("UPDATE movies_data SET rating = " + str(rating) + " WHERE movie_ID = " + str(ID) + ";")
+                except:
+                    pass
+                break
         cursor.close()
         self.close_connec_root()
         
-
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -316,7 +322,6 @@ def get_data():
     app1.set_config()
     app1.get_csv_data()
     app1.get_movie_info()
-    app1.fill_rating()
     try:
         app1.connect_with_root()
     except Error as e:
@@ -329,6 +334,7 @@ def get_data():
     except Error as e:
         print("Error while connecting: ", e, flush=True)    
     if app1.nconnected != False:
+        app1.fill_rating()
         app1.create_table_with_data()
     return render_template("view_data.html", data=app1.print_first_10())
 
