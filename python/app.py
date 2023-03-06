@@ -237,12 +237,15 @@ class App:
             result = cursor.fetchall()
             cursor.execute("SELECT COUNT(*) FROM movies.movies_data;")
             result2 = cursor.fetchall()
+            cursor.execute("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'movies' AND table_name = 'movies_data';")
+            count = cursor.fetchall()[0][0]
             cursor.close()
             self.close_connec_root()
             if result != []:
                 if int(result2[0][0]) == 9742:
                     self.check = False
-                    if len(self.pdata.columns.to_list()) < 9:
+                    if count < 9:
+                        self.check = True
                         pass
                     else:
                         return 0
@@ -254,7 +257,9 @@ class App:
                 pass
         except:
             self.check = True
-            pass            
+            pass        
+        print(self.check, flush=True)
+        return 0    
         rdata = pd.read_csv(r"./RTmovies.csv", index_col=False, delimiter=',')
         #rdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\RTmovies.csv", index_col=False, delimiter=',')
         rdata.fillna(0)
@@ -292,15 +297,14 @@ class App:
         movieID_list = self.pdata['movieId'].tolist()
         for ID in movieID_list:
             cursor.execute("SELECT AVG(rating) FROM movies.movies_ratings WHERE movie_ID = " + str(ID) + ";")
-            rating = cursor.fetchall()
-            cursor.execute("INSERT INTO movies.movies_data ")
-            result = cursor.fetchall()
-            if result[0][0] != None:
-                self.pdata.loc[self.pdata['movieId'] == ID, 'rating'] = result[0][0]
-            else:
-                self.pdata.loc[self.pdata['movieId'] == ID, 'rating'] = "N/A"
+            rating = round(float(cursor.fetchall()[0][0]), 1)
+            cursor.execute("SELECT title FROM movies.movies_data WHERE movie_ID = " + str(ID) + ";")
+            title = cursor.fetchall()[0][0]
+            print(title, flush=True)
+            break
+        cursor.close()
+        self.close_connec_root()
         
-
 
 @app.route("/")
 def index():
@@ -312,7 +316,7 @@ def get_data():
     app1.set_config()
     app1.get_csv_data()
     app1.get_movie_info()
-    #app1.fill_rating()
+    app1.fill_rating()
     try:
         app1.connect_with_root()
     except Error as e:
