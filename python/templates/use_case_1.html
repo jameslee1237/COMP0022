@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %} View Data {% endblock %}
+
+{% block content %}
+    <table>
+        <thead>
+        <tr>
+            <th>movie ID</th>
+            <th>rating</th>
+        </tr>
+        </thead>    
+        <tbody>
+        {% for row in data %}    
+            <tr>
+                <td>{{row[0]}}</td>
+                <td>{{row[1]}}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

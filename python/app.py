@@ -186,14 +186,14 @@ class App:
         
 
     def print_first_10_terminal(self):
-        result = self.print_first_10()
+        result = self.use_case_1()
         for i in result:
             print(i)
         
 
-    def print_first_10(self):
+    def use_case_1(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_data WHERE movie_ID < 10;")
+        cursor.execute("SELECT movies_data.movie_Id, AVG(movies_ratings.rating) as rating FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id GROUP BY movies_ratings.movie_Id;")
         result = cursor.fetchall()
         cursor.close()
         return result
@@ -316,7 +316,7 @@ class App:
 def index():
     return render_template("index.html")
 
-@app.route("/view_data")
+@app.route("/use_case_1")
 def get_data():
     app1 = App()
     app1.set_config()
@@ -336,7 +336,7 @@ def get_data():
     if app1.nconnected != False:
         app1.fill_rating()
         app1.create_table_with_data()
-    return render_template("view_data.html", data=app1.print_first_10())
+    return render_template("use_case_1.html", data=app1.use_case_1())
 
 @app.route("/view_ratings")
 def get_ratings():
