@@ -299,15 +299,13 @@ class App:
         if result != "N/A":
             pass
         else:
-            movieID_list = self.pdata['movieId'].tolist()
             cursor.execute("""UPDATE movies_data m
                               INNER JOIN (SELECT movies_data.movie_Id, AVG(movies_ratings.rating) as rating 
                               FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id
                               GROUP BY movies_ratings.movie_Id) r
                               ON m.movie_Id = r.movie_Id
                               SET m.rating = r.rating;""")
-            cursor.execute("SELECT * FROM movies_data WHERE movie_Id = 1;")
-            result = cursor.fetchall()  
+            self.cnx2.commit()
         cursor.close()
         self.close_connec_root()
         
