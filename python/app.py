@@ -116,12 +116,14 @@ class App:
                 "  movie_ID INT NOT NULL,"
                 "  rating VARCHAR(255) NOT NULL,"
                 "  timestamp VARCHAR(255) NOT NULL);"
+                "  PRIMARY KEY(user_ID, movie_ID));"
             )
             self.TABLES['movies_links'] = (
                 "CREATE TABLE movies_links ("
                 "  movie_ID INT NOT NULL,"
                 "  imdbId VARCHAR(255) NOT NULL,"
                 "  tmdbId VARCHAR(255) NOT NULL);"
+                "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_tags'] = (
                 "CREATE TABLE movies_tags ("
@@ -129,6 +131,7 @@ class App:
                 "  movie_ID INT NOT NULL,"
                 "  tag VARCHAR(255) NOT NULL,"
                 "  timestamp VARCHAR(255) NOT NULL);"
+                "  PRIMARY KEY(user_ID, movie_ID));"
             )
 
             for table_name in self.TABLES:
@@ -239,7 +242,10 @@ class App:
             if result != []:
                 if int(result2[0][0]) == 9742:
                     self.check = False
-                    return 0
+                    if len(self.pdata.columns.to_list()) < 9:
+                        pass
+                    else:
+                        return 0
                 else:
                     self.check = True
                     pass
@@ -280,6 +286,22 @@ class App:
                 self.pdata.loc[self.pdata['title'] == title, 'lead_actors'] = "N/A"
                 self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = "N/A"
 
+    def fill_rating(self):
+        self.connect_with_root()
+        cursor = self.cnx.cursor()
+        movieID_list = self.pdata['movieId'].tolist()
+        for ID in movieID_list:
+            cursor.execute("SELECT AVG(rating) FROM movies.movies_ratings WHERE movie_ID = " + str(ID) + ";")
+            rating = cursor.fetchall()
+            cursor.execute("INSERT INTO movies.movies_data ")
+            result = cursor.fetchall()
+            if result[0][0] != None:
+                self.pdata.loc[self.pdata['movieId'] == ID, 'rating'] = result[0][0]
+            else:
+                self.pdata.loc[self.pdata['movieId'] == ID, 'rating'] = "N/A"
+        
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -290,6 +312,7 @@ def get_data():
     app1.set_config()
     app1.get_csv_data()
     app1.get_movie_info()
+    #app1.fill_rating()
     try:
         app1.connect_with_root()
     except Error as e:
