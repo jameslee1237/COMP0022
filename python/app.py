@@ -300,15 +300,14 @@ class App:
             pass
         else:
             movieID_list = self.pdata['movieId'].tolist()
-            for ID in movieID_list:
-                cursor.execute("SELECT AVG(rating) FROM movies_ratings WHERE movie_ID = " + str(ID) + ";")
-                try:
-                    r = cursor.fetchall()[0][0]
-                    rating = round(float(r), 1)
-                    cursor.execute("UPDATE movies_data SET rating = " + str(rating) + " WHERE movie_ID = " + str(ID) + ";")
-                except:
-                    pass
-                break
+            cursor.execute("""UPDATE movies_data m
+                              INNER JOIN (SELECT movies_data.movie_Id, AVG(movies_ratings.rating) as rating 
+                              FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id
+                              GROUP BY movies_ratings.movie_Id) r
+                              ON m.movie_Id = r.movie_Id
+                              SET m.rating = r.rating;""")
+            cursor.execute("SELECT * FROM movies_data WHERE movie_Id = 1;")
+            result = cursor.fetchall()  
         cursor.close()
         self.close_connec_root()
         
