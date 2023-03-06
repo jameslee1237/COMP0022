@@ -68,6 +68,9 @@ class App:
             cursor = self.cnx.cursor()
             cursor.execute("CREATE DATABASE IF NOT EXISTS movies;")
             cursor.execute("GRANT ALL PRIVILEGES ON movies.* to 'newuser'@'%';")
+            cursor.execute("SET global group_concat_max_len = 15000000;")
+            cursor.execute("SET global max_allowed_packet = 1073741824;")
+            cursor.execute("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'STRICT_TRANS_TABLES',''));")
             cursor.close()
     
     def close_connec_root(self):
@@ -107,7 +110,7 @@ class App:
                 "  lead_actor VARCHAR(255) NOT NULL,"
                 "  rotten_tomatoes VARCHAR(255) NOT NULL,"
                 "  rating VARCHAR(255) NOT NULL,"
-                "  tags VARCHAR(255) NOT NULL,"
+                "  tags VARCHAR(2000) NOT NULL,"
                 "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_ratings'] = (
@@ -292,7 +295,6 @@ class App:
                 self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = "N/A"
 
     def fill_rating(self):
-        self.connect_newuser("movies")
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT rating FROM movies_data WHERE movie_ID = 1;")
         result = cursor.fetchone()[0]
@@ -307,7 +309,22 @@ class App:
                               SET m.rating = r.rating;""")
             self.cnx2.commit()
         cursor.close()
-        self.close_connec_root()
+
+    def fill_tags(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT tags FROM movies_data WHERE movie_ID = 1;")
+        result = cursor.fetchone()[0]
+        if result != "N/A":
+            pass
+        else:
+            cursor.execute("""UPDATE movies_data m INNER JOIN (
+                              SELECT movies_data.movie_Id, GROUP_CONCAT(DISTINCT tag) as tags
+                              FROM movies_tags, movies_data WHERE movies_data.movie_Id = movies_tags.movie_Id
+                              GROUP BY movies_tags.movie_Id) r
+                              ON m.movie_Id = r.movie_Id
+                              SET m.tags = r.tags;""")
+            self.cnx2.commit()
+        cursor.close()
         
 @app.route("/")
 def index():
@@ -332,6 +349,7 @@ def get_data():
         print("Error while connecting: ", e, flush=True)    
     if app1.nconnected != False:
         app1.fill_rating()
+        app1.fill_tags()
         app1.create_table_with_data()
     return render_template("use_case_1.html", data=app1.use_case_1())
 
