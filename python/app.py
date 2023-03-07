@@ -98,7 +98,7 @@ class App:
             cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
             cursor.execute("DROP TABLE IF EXISTS movies_links;")
             cursor.execute("DROP TABLE IF EXISTS movies_tags;")
-            
+          
 
             self.TABLES['movies_data'] = (
                 "CREATE TABLE movies_data ("
@@ -118,14 +118,14 @@ class App:
                 "  user_ID INT NOT NULL,"
                 "  movie_ID INT NOT NULL,"
                 "  rating VARCHAR(255) NOT NULL,"
-                "  timestamp VARCHAR(255) NOT NULL);"
+                "  timestamp VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(user_ID, movie_ID));"
             )
             self.TABLES['movies_links'] = (
                 "CREATE TABLE movies_links ("
                 "  movie_ID INT NOT NULL,"
                 "  imdbId VARCHAR(255) NOT NULL,"
-                "  tmdbId VARCHAR(255) NOT NULL);"
+                "  tmdbId VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_tags'] = (
@@ -133,8 +133,8 @@ class App:
                 "  user_ID INT NOT NULL,"
                 "  movie_ID INT NOT NULL,"
                 "  tag VARCHAR(255) NOT NULL,"
-                "  timestamp VARCHAR(255) NOT NULL);"
-                "  PRIMARY KEY(user_ID, movie_ID));"
+                "  timestamp VARCHAR(255) NOT NULL,"
+                "  PRIMARY KEY(user_ID, movie_ID, tag));"
             )
 
             for table_name in self.TABLES:
@@ -151,9 +151,14 @@ class App:
                     print("OK", flush=True)
             
             #format pdata
-            self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
-            self.pdata.fillna("N/A")
-
+            if len(self.pdata.columns.tolist()) < 9:
+                self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
+                self.pdata.fillna("N/A")
+            else:
+                pass
+            
+            cursor.execute("SET autocommit = 0;")
+            cursor.execute("START TRANSACTION;")
             #Populate tables
             for i, row in self.pdata.iterrows():
                 row = row.fillna(0)
@@ -161,33 +166,32 @@ class App:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-                self.cnx2.commit()
+
             
             for i, row in self.ratings_data.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_ratings VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-                self.cnx2.commit()
+
 
             for i, row in self.links_data.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-                self.cnx2.commit()
+
                 
             for i, row in self.tags_data.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-                self.cnx2.commit()
-            cursor.close()
-            return 0
-            
-        
+            cursor.execute("COMMIT;")
 
+            cursor.close()
+            
+    
     def print_first_10_terminal(self):
         result = self.use_case_1()
         for i in result:
@@ -260,9 +264,7 @@ class App:
                 pass
         except:
             self.check = True
-            pass        
-        print(self.check, flush=True)
-        return 0    
+            pass         
         rdata = pd.read_csv(r"./RTmovies.csv", index_col=False, delimiter=',')
         #rdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\RTmovies.csv", index_col=False, delimiter=',')
         rdata.fillna(0)
@@ -348,9 +350,9 @@ def get_data():
     except Error as e:
         print("Error while connecting: ", e, flush=True)    
     if app1.nconnected != False:
+        app1.create_table_with_data()
         app1.fill_rating()
         app1.fill_tags()
-        app1.create_table_with_data()
     return render_template("use_case_1.html", data=app1.use_case_1())
 
 @app.route("/view_ratings")
