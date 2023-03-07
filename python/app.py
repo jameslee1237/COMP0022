@@ -200,7 +200,7 @@ class App:
 
     def use_case_1(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT movies_data.movie_Id, AVG(movies_ratings.rating) as rating FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id GROUP BY movies_ratings.movie_Id;")
+        cursor.execute("SELECT * FROM movies.movies_data ORDER BY rating DESC;")
         result = cursor.fetchall()
         cursor.close()
         return result

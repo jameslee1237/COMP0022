@@ -6,14 +6,22 @@
         <thead>
         <tr>
             <th>movie ID</th>
+            <th>title</th>
+            <th>genre</th>
+            <th>content</th>
+            <th>director</th>
+            <th>lead actor</th>
+            <th>rotten tomatoes</th>
             <th>rating</th>
+            <th>tags</th>
         </tr>
         </thead>    
         <tbody>
         {% for row in data %}    
             <tr>
-                <td>{{row[0]}}</td>
-                <td>{{row[1]}}</td>
+                {% for col in row %}
+                    <td>{{col}}</td>
+                {% endfor %}
             </tr>
         {% endfor %}
         </tbody>
