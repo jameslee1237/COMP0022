@@ -190,18 +190,38 @@ class App:
             cursor.execute("COMMIT;")
 
             cursor.close()
-            
-    
-    def print_first_10_terminal(self):
-        result = self.use_case_1()
-        for i in result:
-            print(i)
-        
 
-    def use_case_1(self):
+    def use_case_1(self, filters):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_data ORDER BY rating DESC;")
-        result = cursor.fetchall()
+        query_params = ''
+        base_query = 'SELECT * FROM movies.movies_data'
+
+        print(f"Filters: {filters}", flush=True)
+
+        if filters is None:
+            # This condition is activated through a GET request on the page
+            query_params = ';'
+        else:
+            if len(filters) != 0:
+                # Additional query parameters found from filters argument - build SQL command
+                filters = filters.to_dict(flat=False)
+
+                print(f"Form filters: {filters}", flush=True)
+                query_params = ' ORDER BY'
+
+                # Dynamically add sorting filters to query
+                for idx, (col_name, col_filter) in enumerate(filters.items()):
+                    query_params += f' {col_name} {str(col_filter[0]).upper()}'
+                    if idx < len(filters.items()) -1 and len(filters.items()) > 1:
+                        query_params += ','
+                query_params += ';'
+        
+        # Build final query for execution
+        base_query += query_params
+        print(f'USE CASE 1 FINAL QUERY: "{base_query}"', flush=True)
+
+        cursor.execute(base_query)
+        result = cursor.fetchall() 
         cursor.close()
         return result
     
@@ -332,7 +352,7 @@ class App:
 def index():
     return render_template("index.html")
 
-@app.route("/use_case_1")
+@app.route("/use_case_1", methods=['GET', 'POST'])
 def get_data():
     app1 = App()
     app1.set_config()
@@ -353,7 +373,35 @@ def get_data():
         app1.create_table_with_data()
         app1.fill_rating()
         app1.fill_tags()
-    return render_template("use_case_1.html", data=app1.use_case_1())
+    
+    # Pass column names and display versions as variable to template
+    movies_data_headings = ['movie_Id', 'title', 'genre', 'content', 'director', 'lead_actor',
+        'rotten_tomatoes', 'rating', 'tag']
+    movies_data_headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
+        'Lead Actor', 'Rating (Rotten Tomatoes)', 'Rating (Overall)', 'Tags']
+    
+    query_result = app1.use_case_1(filters=None)
+
+    # POST button events
+    if request.method == "POST":
+        # Pass the POST form filter data to execute query
+        query_result = app1.use_case_1(filters=request.form)
+        return render_template(
+            'use_case_1.html',
+            query_res=query_result,
+            len=len(movies_data_headings),
+            movies_data_headings=movies_data_headings,
+            movies_data_headings_display=movies_data_headings_display
+        )
+
+    return render_template(
+        'use_case_1.html',
+        query_res=query_result,
+        len=len(movies_data_headings),
+        movies_data_headings=movies_data_headings,
+        movies_data_headings_display=movies_data_headings_display
+    )
+
 
 @app.route("/view_ratings")
 def get_ratings():

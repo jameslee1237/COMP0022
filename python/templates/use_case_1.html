@@ -1,29 +1,62 @@
 {% extends 'base.html' %}
-{% block title %} View Data {% endblock %}
+
+{% block title %} Use Case 1 {% endblock %}
+
+{% block button_menu %}
+{% endblock button_menu %}
 
 {% block content %}
-    <table>
-        <thead>
-        <tr>
-            <th>movie ID</th>
-            <th>title</th>
-            <th>genre</th>
-            <th>content</th>
-            <th>director</th>
-            <th>lead actor</th>
-            <th>rotten tomatoes</th>
-            <th>rating</th>
-            <th>tags</th>
-        </tr>
-        </thead>    
-        <tbody>
-        {% for row in data %}    
-            <tr>
-                {% for col in row %}
-                    <td>{{col}}</td>
+    <div class="container test-form" style="display: flex;">
+        <form action="{{ url_for('get_data') }}" method="POST">
+            <!-- Filter by basic attributes-->
+            <div class="filter-group">
+                <p>Title</p>
+                <input type="radio" name="title" value="asc">
+                <label>ASC</label>
+                <input type="radio" name="title" value="desc">
+                <label>DESC</label>
+            </div>
+
+            <!-- Filter by ordered ratings -->
+            <div class="filter-group">
+                <p>Rotten Tomatoes Rating</p>
+                <input type="radio" name="rotten_tomatoes" value="asc" id="asc-option">
+                <label>ASC</label>
+                <input type="radio" name="rotten_tomatoes" value="desc" id="desc-option">
+                <label>DESC</label>
+            </div>
+            <div class="filter-group">
+                <p>Ov. Rating</p>
+                <input type="radio" name="rating" value="asc">
+                <label>ASC</label>
+                <input type="radio" name="rating" value="desc">
+                <label>DESC</label>
+            </div>
+            <input type="submit" value="Submit">
+        </form>
+    </div>
+    <style>
+        table {border-collapse:collapse; table-layout:fixed;;}
+        table td {width:100px; word-wrap:break-word;}
+    </style>
+    <div style="overflow-x: auto;">
+        <table class="">
+            <thead class="thead-light">
+                <tr>
+                    {% for i in range(0, len) %}
+                        <th>{{movies_data_headings_display[i]}}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in query_res %}
+                    <tr>
+                        {% for col in row %}
+                            <td>{{col}}</td>
+                        {% endfor %}
+                    </tr>
                 {% endfor %}
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 {% endblock %}
