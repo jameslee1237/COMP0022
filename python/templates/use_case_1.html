@@ -32,6 +32,16 @@
                 <input type="radio" name="rating" value="desc">
                 <label>DESC</label>
             </div>
+            <div class="filter-group">
+                <p>Genres</p>
+                <select name="genre">
+                    <!-- Add a default option "None" to prevent filtering on genre column -->
+                    <option value="none" selected>None</option>
+                    {% for genre_name in unique_genres %}
+                        <option value={{genre_name}}>{{genre_name}}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <input type="submit" value="Submit">
         </form>
     </div>
@@ -44,7 +54,7 @@
             <thead class="thead-light">
                 <tr>
                     {% for i in range(0, len) %}
-                        <th>{{movies_data_headings_display[i]}}</th>
+                        <th>{{headings_display[i]}}</th>
                     {% endfor %}
                 </tr>
             </thead>

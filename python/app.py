@@ -191,6 +191,24 @@ class App:
 
             cursor.close()
 
+    def get_unique_genres(self):
+        """
+        Extracts all the possible genres in the movies database
+        """
+        
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT genre FROM movies.movies_data;")
+        genres_column = cursor.fetchall()
+        unique_genres = {}
+
+        for row in genres_column:
+            for genre in str(row[0]).split(sep='|'):
+                unique_genres[genre] = None
+
+        print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
+        cursor.close()
+        return list(unique_genres.keys())
+
     def use_case_1(self, filters):
         cursor = self.cnx2.cursor()
         query_params = ''
@@ -202,12 +220,23 @@ class App:
             # This condition is activated through a GET request on the page
             query_params = ';'
         else:
-            if len(filters) != 0:
-                # Additional query parameters found from filters argument - build SQL command
-                filters = filters.to_dict(flat=False)
+            # Additional query parameters found from filters argument - build SQL command
+            filters = filters.to_dict(flat=False)
 
-                print(f"Form filters: {filters}", flush=True)
-                query_params = ' ORDER BY'
+            print(f"Form filters: {filters}", flush=True)
+
+            if "genre" in filters.keys():
+                selected_genre = filters["genre"][0]
+                print(f"Selected genre: {selected_genre}", flush=True)
+                if selected_genre == "none":
+                    print("0")
+                    pass
+                else:
+                    query_params += f" WHERE genre LIKE '%{selected_genre}%'"
+                del filters["genre"]
+
+            if len(filters) != 0:
+                query_params += ' ORDER BY'
 
                 # Dynamically add sorting filters to query
                 for idx, (col_name, col_filter) in enumerate(filters.items()):
@@ -374,34 +403,28 @@ def get_data():
         app1.fill_rating()
         app1.fill_tags()
     
-    # Pass column names and display versions as variable to template
-    movies_data_headings = ['movie_Id', 'title', 'genre', 'content', 'director', 'lead_actor',
-        'rotten_tomatoes', 'rating', 'tag']
-    movies_data_headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
+    # Load table column names template
+    headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
         'Lead Actor', 'Rating (Rotten Tomatoes)', 'Rating (Overall)', 'Tags']
-    
-    query_result = app1.use_case_1(filters=None)
+
+    # Fetch unique genres of the table to populate selection button in UI
+    unique_genres = app1.get_unique_genres()
 
     # POST button events
     if request.method == "POST":
         # Pass the POST form filter data to execute query
         query_result = app1.use_case_1(filters=request.form)
-        return render_template(
-            'use_case_1.html',
-            query_res=query_result,
-            len=len(movies_data_headings),
-            movies_data_headings=movies_data_headings,
-            movies_data_headings_display=movies_data_headings_display
-        )
+    else:
+        # Fetch query result
+        query_result = app1.use_case_1(filters=None)
 
     return render_template(
         'use_case_1.html',
         query_res=query_result,
-        len=len(movies_data_headings),
-        movies_data_headings=movies_data_headings,
-        movies_data_headings_display=movies_data_headings_display
+        len=len(headings_display),
+        unique_genres=unique_genres,
+        headings_display=headings_display
     )
-
 
 @app.route("/view_ratings")
 def get_ratings():
