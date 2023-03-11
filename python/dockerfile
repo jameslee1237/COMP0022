@@ -16,7 +16,7 @@ COPY movies.csv links.csv ratings.csv tags.csv RTmovies.csv ./
 
 COPY app.py ./
 
-COPY styles.css ./
+COPY static /usr/app/src/static
 
 WORKDIR /usr/app/src/templates
 

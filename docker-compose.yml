@@ -31,6 +31,8 @@ services:
     networks:
       - backend
       - frontend 
+    volumes:
+      - ./static:/app/static
 
   proxy:
     depends_on:
@@ -39,9 +41,11 @@ services:
     restart: unless-stopped
     ports:
       - 60:60
-    image: nginx:latest
+    # image: nginx:latest
     networks:
       - frontend
+    volumes:
+      - ./static:/var/www/html/static
 
 networks:
   backend:

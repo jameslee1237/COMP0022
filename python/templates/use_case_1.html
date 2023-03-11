@@ -61,8 +61,17 @@
             <tbody>
                 {% for row in query_res %}
                     <tr>
-                        {% for col in row %}
-                            <td>{{col}}</td>
+                        {% for j in range(0, len) %}
+                            {% if j == 2 %}
+                                {% set genre_list = row[j].split('|') %}
+                                <td style="display: flex;">
+                                    {% for genre in genre_list %}
+                                        <p class="genre-tag">{{genre}}</p>
+                                    {% endfor %}
+                                </td>
+                            {% else %}
+                                <td>{{row[j]}}</td>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                 {% endfor %}

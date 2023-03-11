@@ -3,10 +3,10 @@ import pandas as pd
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 
 class App:
     def __init__(self):

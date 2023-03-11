@@ -1,9 +1,12 @@
 server {
-    listen       60;
+    listen       80;
     server_name  localhost;
     location / {
         proxy_pass   http://pythonapp:8000;
         proxy_read_timeout 3600;
     }
 
+    location /static {
+        alias /var/www/html/static;
+    }
 }
