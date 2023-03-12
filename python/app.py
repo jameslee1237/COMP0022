@@ -210,41 +210,75 @@ class App:
         return list(unique_genres.keys())
 
     def use_case_1(self, filters):
+        """
+        Our solution to USE CASE 1 is to build a flexible SQL query. The final query is built
+        depending on the user's inputs to the associated radio buttons in use_case_1.html, where
+        the 'name' attribute of the radio button is the required column name in our 
+        movies.movies_data table, and the 'value' attribute of the radio button corresponds to
+        the sorting order that the user wants. The 'name' and 'value' attribute of every activated 
+        radio button is passed into this function via the 'filters' argument.
+
+        E.g. If the user selects the "rating" radio button and ascending sorting order, then the 
+        'filters' object should contain something like: {'rating': ['asc']}.
+
+        You can select multiple of these filters in the filter form.
+        """
+
         cursor = self.cnx2.cursor()
         query_params = ''
         base_query = 'SELECT * FROM movies.movies_data'
 
-        print(f"Filters: {filters}", flush=True)
-
         if filters is None:
-            # This condition is activated through a GET request on the page
-            query_params = ' LIMIT 20 OFFSET 20;'
+            # This condition is activated when a GET request is issued for the webpage
+            pass
         else:
-            # Additional query parameters found from filters argument - build SQL command
+            # The function has received more than 0 filters - we shall process these additional filters
             filters = filters.to_dict(flat=False)
-
             print(f"Form filters: {filters}", flush=True)
 
-            if "genre" in filters.keys():
-                selected_genre = filters["genre"][0]
-                print(f"Selected genre: {selected_genre}", flush=True)
-                if selected_genre == "none":
-                    print("0")
-                    pass
-                else:
-                    query_params += f" WHERE genre LIKE '%{selected_genre}%'"
+            # NOTE: The 'genre' filter uses a WHERE clause to get movies with the selected genre, hence
+            # has higher priority than the ORDER BY filters for the radio buttons.
+            if any(column in filters.keys() and filters[column][0] != '' for column in ["genre", "year_before", "year_after"]):
+                query_params += ' WHERE '
+
+                if "genre" in filters.keys():
+                    selected_genre = filters["genre"][0]
+                    if selected_genre != "":
+                        query_params += f"genre LIKE '%{selected_genre}%'"
                 del filters["genre"]
 
+                # later use between instead, and use after start year, before end year as text input
+                if filters["year_before"][0] != '' and filters["year_after"][0] == '':
+                    print(1, flush=True)
+                    # Get movies before year B
+                    year_before = filters["year_before"][0]
+                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) < {int(year_before)} '
+                
+                elif filters["year_after"][0] != '' and filters["year_before"][0] == '':
+                    print(2, flush=True)
+                    # Get movies after year A
+                    year_after = filters["year_after"][0]
+                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) > {int(year_after)} '
+
+                elif filters["year_before"][0] != '' and filters["year_after"][0] != '':
+                    print(3, flush=True)
+                    # Get movies after year A and before year B
+                    year_before = filters["year_before"][0]
+                    year_after = filters["year_after"][0]
+                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) BETWEEN {int(year_after)} AND {int(year_before)} '
+                del filters["year_before"], filters['year_after']
+            
             if len(filters) != 0:
                 query_params += ' ORDER BY'
-
                 # Dynamically add sorting filters to query
                 for idx, (col_name, col_filter) in enumerate(filters.items()):
                     query_params += f' {col_name} {str(col_filter[0]).upper()}'
                     if idx < len(filters.items()) -1 and len(filters.items()) > 1:
                         query_params += ','
-            query_params += ' LIMIT 20 OFFSET 20;'
         
+        # Add paginator
+        query_params += ' LIMIT 20 OFFSET 20;'
+
         # Build final query for execution
         base_query += query_params
         print(f'USE CASE 1 FINAL QUERY: "{base_query}"', flush=True)

@@ -50,15 +50,34 @@
                         <label class="form-check-label" for="ratings-desc">DESC</label>
                     </div>
                 </div>
+            </fieldset>
+            <fieldset class="row">
                 <legend class="col-form-label col-sm-1 pt-0">Genres</legend>
                 <div class="col-sm-2">
-                    <select class="form-select" name="genre">
-                        <!-- Add a default option "None" to prevent filtering on genre column -->
-                        <option value="none" selected>None</option>
-                        {% for genre_name in unique_genres %}
-                            <option value={{genre_name}}>{{genre_name}}</option>
-                        {% endfor %}
-                    </select>
+                    <div class="form-floating">
+                        <select class="form-select" name="genre" id="genre-select">
+                            <!-- Add a default option "None" to prevent filtering on genre column -->
+                            <option value="" selected>None</option>
+                            {% for genre_name in unique_genres %}
+                                <option value={{genre_name}}>{{genre_name}}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="genre-select">Select Genre</label>
+                    </div>
+                </div>
+                <legend class="col-form-label col-sm-1 pt-0">Before Year</legend>
+                <div class="col-sm-2">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" name="year_before" id="year_before" placeholder="2023" value="">
+                        <label for="year_before">Enter year before</label>
+                    </div>
+                </div>
+                <legend class="col-form-label col-sm-1 pt-0">After Year</legend>
+                <div class="col-sm-2">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" name="year_after" id="year_after" placeholder="2023" value="">
+                        <label for="year_after">Enter year after</label>
+                    </div>
                 </div>
             </fieldset>
             <button type="submit" class="btn btn-primary">Search Movies</button>
