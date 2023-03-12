@@ -353,7 +353,7 @@ class App:
             pass
         else:
             cursor.execute("""UPDATE movies_data m
-                              INNER JOIN (SELECT movies_data.movie_Id, AVG(movies_ratings.rating) as rating 
+                              INNER JOIN (SELECT movies_data.movie_Id, ROUND(AVG(movies_ratings.rating), 2) as rating 
                               FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id
                               GROUP BY movies_ratings.movie_Id) r
                               ON m.movie_Id = r.movie_Id

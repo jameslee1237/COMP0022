@@ -1,12 +1,11 @@
 /* CSS for base template styling */
 .content {
-    margin: 0 10% !important;
+    padding: 0 5% !important;
 }
 
 /* Navbar */
 .navbar {
-    padding-left: 5%;
-    padding-right: 5%;
+    padding: 1.5rem 5% !important;
 }
 
 .container-fluid {

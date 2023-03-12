@@ -1,4 +1,8 @@
 /* CSS for use case 1 styling */
+.title {
+    padding-top: 2.5rem;
+}
+
 .use-case-1-form {
     width: 100%;
     padding-top: 2.5rem;
@@ -8,7 +12,6 @@
 .use-case-1-results-table {
     width: 100%;
     table-layout: auto;
-    overflow: scroll;
 }
 
 .align-rows {
