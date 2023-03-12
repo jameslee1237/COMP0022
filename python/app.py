@@ -263,8 +263,9 @@ class App:
                 if "genre" in filters.keys():
                     selected_genre = filters["genre"][0]
                     query_params += f"genre LIKE '%{selected_genre}%'" if selected_genre != "" else ''
-
-                query_params += self.build_date_query(filters)
+                
+                date_query = self.build_date_query(filters)
+                query_params += ' AND ' + date_query if date_query != '' else ''
                 del filters["genre"], filters["year_before"], filters['year_after']
             
             if len(filters) != 0:
