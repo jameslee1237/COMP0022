@@ -88,6 +88,7 @@ class App:
         self.cnx2 = mysql.connector.connect(user=db_user, password=db_pwd, host=db_host, port=db_port, database=db_name)
         self.nconnected = True
     
+    # Create tables and populate the tables with CSV data
     def create_table_with_data(self):
         cursor = self.cnx2.cursor()
         if not self.check:
@@ -191,6 +192,7 @@ class App:
 
             cursor.close()
 
+    # USE CASE 1 FUNCTIONS
     def get_unique_genres(self):
         """
         Extracts all the possible genres in the movies database
@@ -208,18 +210,38 @@ class App:
         print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
         cursor.close()
         return list(unique_genres.keys())
+    
+    def build_date_query(self, filters) -> str:
+        query_params = ''
+
+        # No filters for years - we skip adding date to our query
+        if filters["year_before"][0] == '' and filters["year_after"][0] == '':
+            pass
+    
+        # Both filters for years are selected
+        elif filters["year_before"][0] != '' and filters["year_after"][0] != '':
+            year_before, year_after = int(filters["year_before"][0]), int(filters["year_after"][0])
+
+            # 2 years are specified, so we need to check if before < after
+            query_params += f"CAST(SUBSTRING(title, -5, 4) AS SIGNED) {'NOT' if year_before < year_after else ''} \
+                 BETWEEN {year_after} AND {year_before} "
+        else:
+            year_before = int(filters["year_before"][0]) if filters["year_before"][0] != '' else 9999
+            year_after = int(filters["year_after"][0]) if filters["year_after"][0] != '' else 0
+            query_params += f"CAST(SUBSTRING(title, -5, 4) AS SIGNED) BETWEEN {year_after} AND {year_before} "
+
+        return query_params
 
     def use_case_1(self, filters):
         """
-        Our solution to USE CASE 1 is to build a flexible SQL query. The final query is built
-        depending on the user's inputs to the associated radio buttons in use_case_1.html, where
-        the 'name' attribute of the radio button is the required column name in our 
-        movies.movies_data table, and the 'value' attribute of the radio button corresponds to
-        the sorting order that the user wants. The 'name' and 'value' attribute of every activated 
-        radio button is passed into this function via the 'filters' argument.
+        Our solution to USE CASE 1 is to build a flexible SQL query. The final query is built depending on the user's
+        inputs to the associated radio buttons in use_case_1.html, where the 'name' attribute of the radio button is 
+        the required column name in our movies.movies_data table, and the 'value' attribute of the radio button 
+        corresponds to the sorting order that the user wants. The 'name' and 'value' attribute of every activated radio
+        button is passed into this function via the 'filters' argument.
 
-        E.g. If the user selects the "rating" radio button and ascending sorting order, then the 
-        'filters' object should contain something like: {'rating': ['asc']}.
+        E.g. If the user selects the "rating" radio button and ascending sorting order, then the 'filters' object should 
+        contain something like: {'rating': ['asc']}.
 
         You can select multiple of these filters in the filter form.
         """
@@ -228,48 +250,26 @@ class App:
         query_params = ''
         base_query = 'SELECT * FROM movies.movies_data'
 
-        if filters is None:
-            # This condition is activated when a GET request is issued for the webpage
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
             pass
-        else:
-            # The function has received more than 0 filters - we shall process these additional filters
+        else:                   # The function has received more than 0 filters - we shall process these additional filters
             filters = filters.to_dict(flat=False)
-            print(f"Form filters: {filters}", flush=True)
 
             # NOTE: The 'genre' filter uses a WHERE clause to get movies with the selected genre, hence
             # has higher priority than the ORDER BY filters for the radio buttons.
-            if any(column in filters.keys() and filters[column][0] != '' for column in ["genre", "year_before", "year_after"]):
+            if any(column in filters.keys() for column in ["genre", "year_before", "year_after"]):
                 query_params += ' WHERE '
 
                 if "genre" in filters.keys():
                     selected_genre = filters["genre"][0]
-                    if selected_genre != "":
-                        query_params += f"genre LIKE '%{selected_genre}%'"
-                del filters["genre"]
+                    query_params += f"genre LIKE '%{selected_genre}%'" if selected_genre != "" else ''
 
-                # later use between instead, and use after start year, before end year as text input
-                if filters["year_before"][0] != '' and filters["year_after"][0] == '':
-                    print(1, flush=True)
-                    # Get movies before year B
-                    year_before = filters["year_before"][0]
-                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) < {int(year_before)} '
-                
-                elif filters["year_after"][0] != '' and filters["year_before"][0] == '':
-                    print(2, flush=True)
-                    # Get movies after year A
-                    year_after = filters["year_after"][0]
-                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) > {int(year_after)} '
-
-                elif filters["year_before"][0] != '' and filters["year_after"][0] != '':
-                    print(3, flush=True)
-                    # Get movies after year A and before year B
-                    year_before = filters["year_before"][0]
-                    year_after = filters["year_after"][0]
-                    query_params += f'CAST(SUBSTRING(title, -5, 4) AS SIGNED) BETWEEN {int(year_after)} AND {int(year_before)} '
-                del filters["year_before"], filters['year_after']
+                query_params += self.build_date_query(filters)
+                del filters["genre"], filters["year_before"], filters['year_after']
             
             if len(filters) != 0:
                 query_params += ' ORDER BY'
+
                 # Dynamically add sorting filters to query
                 for idx, (col_name, col_filter) in enumerate(filters.items()):
                     query_params += f' {col_name} {str(col_filter[0]).upper()}'
