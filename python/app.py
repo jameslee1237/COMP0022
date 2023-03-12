@@ -218,7 +218,7 @@ class App:
 
         if filters is None:
             # This condition is activated through a GET request on the page
-            query_params = ';'
+            query_params = ' LIMIT 20 OFFSET 20;'
         else:
             # Additional query parameters found from filters argument - build SQL command
             filters = filters.to_dict(flat=False)
@@ -243,7 +243,7 @@ class App:
                     query_params += f' {col_name} {str(col_filter[0]).upper()}'
                     if idx < len(filters.items()) -1 and len(filters.items()) > 1:
                         query_params += ','
-                query_params += ';'
+            query_params += ' LIMIT 20 OFFSET 20;'
         
         # Build final query for execution
         base_query += query_params

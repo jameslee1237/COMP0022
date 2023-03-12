@@ -1,0 +1,15 @@
+/* CSS for base template styling */
+.content {
+    margin: 0 10% !important;
+}
+
+/* Navbar */
+.navbar {
+    padding-left: 5%;
+    padding-right: 5%;
+}
+
+.container-fluid {
+    padding-left: 0px !important;
+    padding-right: 0px !important;
+}

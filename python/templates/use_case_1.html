@@ -2,59 +2,70 @@
 
 {% block title %} Use Case 1 {% endblock %}
 
+{% block css_links %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='use_case_1.css') }}">
+{% endblock %}
+
 {% block button_menu %}
 {% endblock button_menu %}
 
 {% block content %}
-    <div class="container test-form" style="display: flex;">
-        <form action="{{ url_for('get_data') }}" method="POST">
-            <!-- Filter by basic attributes-->
-            <div class="filter-group">
-                <p>Title</p>
-                <input type="radio" name="title" value="asc">
-                <label>ASC</label>
-                <input type="radio" name="title" value="desc">
-                <label>DESC</label>
-            </div>
-
-            <!-- Filter by ordered ratings -->
-            <div class="filter-group">
-                <p>Rotten Tomatoes Rating</p>
-                <input type="radio" name="rotten_tomatoes" value="asc" id="asc-option">
-                <label>ASC</label>
-                <input type="radio" name="rotten_tomatoes" value="desc" id="desc-option">
-                <label>DESC</label>
-            </div>
-            <div class="filter-group">
-                <p>Ov. Rating</p>
-                <input type="radio" name="rating" value="asc">
-                <label>ASC</label>
-                <input type="radio" name="rating" value="desc">
-                <label>DESC</label>
-            </div>
-            <div class="filter-group">
-                <p>Genres</p>
-                <select name="genre">
-                    <!-- Add a default option "None" to prevent filtering on genre column -->
-                    <option value="none" selected>None</option>
-                    {% for genre_name in unique_genres %}
-                        <option value={{genre_name}}>{{genre_name}}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <input type="submit" value="Submit">
-        </form>
+    <div class="">
+        <form class="use-case-1-form" action="{{ url_for('get_data') }}" method="POST">
+            <fieldset class="row mb-2">
+                <legend class="col-form-label col-sm-1 pt-0">Title</legend>
+                <div class="col-sm-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="title" id="title-asc" value="asc">
+                        <label class="form-check-label" for="title-asc">ASC</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="title" id="title-desc" value="desc">
+                        <label class="form-check-label" for="title-desc">DESC</label>
+                    </div>
+                </div>
+                <legend class="col-form-label col-sm-1 pt-0">Ratings (RT)</legend>
+                <div class="col-sm-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="rotten_tomatoes" id="ratings-rt-asc" value="asc">
+                        <label class="form-check-label" for="ratings-rt-asc">ASC</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="rotten_tomatoes" id="ratings-rt-desc" value="desc">
+                        <label class="form-check-label" for="ratings-rt-desc">DESC</label>
+                    </div>
+                </div>
+                <legend class="col-form-label col-sm-1 pt-0">Ratings (Ov.)</legend>
+                <div class="col-sm-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="rating" id="ratings-asc" value="asc">
+                        <label class="form-check-label" for="ratings-asc">ASC</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="rating" id="ratings-desc" value="desc">
+                        <label class="form-check-label" for="ratings-desc">DESC</label>
+                    </div>
+                </div>
+                <legend class="col-form-label col-sm-1 pt-0">Genres</legend>
+                <div class="col-sm-2">
+                    <select class="form-select" name="genre">
+                        <!-- Add a default option "None" to prevent filtering on genre column -->
+                        <option value="none" selected>None</option>
+                        {% for genre_name in unique_genres %}
+                            <option value={{genre_name}}>{{genre_name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </fieldset>
+            <button type="submit" class="btn btn-primary">Search Movies</button>
+          </form>
     </div>
-    <style>
-        table {border-collapse:collapse; table-layout:fixed;;}
-        table td {width:100px; word-wrap:break-word;}
-    </style>
-    <div style="overflow-x: auto;">
-        <table class="">
-            <thead class="thead-light">
+    <div class="use-case-1-results">
+        <table class="table use-case-1-results-table">
+            <thead class="table-dark">
                 <tr>
                     {% for i in range(0, len) %}
-                        <th>{{headings_display[i]}}</th>
+                        <th scope="col">{{headings_display[i]}}</th>
                     {% endfor %}
                 </tr>
             </thead>
@@ -64,11 +75,13 @@
                         {% for j in range(0, len) %}
                             {% if j == 2 %}
                                 {% set genre_list = row[j].split('|') %}
-                                <td style="display: flex;">
+                                <td class="genre-list">
                                     {% for genre in genre_list %}
-                                        <p class="genre-tag">{{genre}}</p>
+                                        <span class="genre-tag">{{genre}}</span>
                                     {% endfor %}
                                 </td>
+                            {% elif j == 0 %}
+                                <th scope="row">{{row[j]}}</th>
                             {% else %}
                                 <td>{{row[j]}}</td>
                             {% endif %}
