@@ -88,6 +88,7 @@ class App:
         self.cnx2 = mysql.connector.connect(user=db_user, password=db_pwd, host=db_host, port=db_port, database=db_name)
         self.nconnected = True
     
+    # ESSENTIAL FUNCTIONS FOR BUILDING DATABASE
     # Create tables and populate the tables with CSV data
     def create_table_with_data(self):
         cursor = self.cnx2.cursor()
@@ -192,134 +193,6 @@ class App:
 
             cursor.close()
 
-    # USE CASE 1 FUNCTIONS
-    def get_unique_genres(self):
-        """
-        Extracts all the possible genres in the movies database
-        """
-        
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT genre FROM movies.movies_data;")
-        genres_column = cursor.fetchall()
-        unique_genres = {}
-
-        for row in genres_column:
-            for genre in str(row[0]).split(sep='|'):
-                unique_genres[genre] = None
-
-        print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
-        cursor.close()
-        return list(unique_genres.keys())
-    
-    def build_date_query(self, filters) -> str:
-        query_params = ''
-
-        # No filters for years - we skip adding date to our query
-        if filters["year_before"][0] == '' and filters["year_after"][0] == '':
-            pass
-    
-        # Both filters for years are selected
-        elif filters["year_before"][0] != '' and filters["year_after"][0] != '':
-            year_before, year_after = int(filters["year_before"][0]), int(filters["year_after"][0])
-
-            # 2 years are specified, so we need to check if before < after
-            query_params += f"CAST(SUBSTRING(title, -5, 4) AS SIGNED) {'NOT' if year_before < year_after else ''} \
-                 BETWEEN {year_after} AND {year_before} "
-        else:
-            year_before = int(filters["year_before"][0]) if filters["year_before"][0] != '' else 9999
-            year_after = int(filters["year_after"][0]) if filters["year_after"][0] != '' else 0
-            query_params += f"CAST(SUBSTRING(title, -5, 4) AS SIGNED) BETWEEN {year_after} AND {year_before} "
-
-        return query_params
-
-    def use_case_1(self, filters):
-        """
-        Our solution to USE CASE 1 is to build a flexible SQL query. The final query is built depending on the user's
-        inputs to the associated radio buttons in use_case_1.html, where the 'name' attribute of the radio button is 
-        the required column name in our movies.movies_data table, and the 'value' attribute of the radio button 
-        corresponds to the sorting order that the user wants. The 'name' and 'value' attribute of every activated radio
-        button is passed into this function via the 'filters' argument.
-
-        E.g. If the user selects the "rating" radio button and ascending sorting order, then the 'filters' object should 
-        contain something like: {'rating': ['asc']}.
-
-        You can select multiple of these filters in the filter form.
-        """
-
-        cursor = self.cnx2.cursor()
-        query_params = ''
-        base_query = 'SELECT * FROM movies.movies_data'
-
-        if filters is None:     # This condition is activated when a GET request is issued for the webpage
-            pass
-        else:                   # The function has received more than 0 filters - we shall process these additional filters
-            filters = filters.to_dict(flat=False)
-
-            # NOTE: The 'genre' filter uses a WHERE clause to get movies with the selected genre, hence
-            # has higher priority than the ORDER BY filters for the radio buttons.
-            if any(column in filters.keys() for column in ["genre", "year_before", "year_after"]):
-                query_params += ' WHERE '
-
-                if "genre" in filters.keys():
-                    selected_genre = filters["genre"][0]
-                    query_params += f"genre LIKE '%{selected_genre}%'" if selected_genre != "" else ''
-                
-                date_query = self.build_date_query(filters)
-                query_params += ' AND ' + date_query if date_query != '' else ''
-                del filters["genre"], filters["year_before"], filters['year_after']
-            
-            if len(filters) != 0:
-                query_params += ' ORDER BY'
-
-                # Dynamically add sorting filters to query
-                for idx, (col_name, col_filter) in enumerate(filters.items()):
-                    query_params += f' {col_name} {str(col_filter[0]).upper()}'
-                    if idx < len(filters.items()) -1 and len(filters.items()) > 1:
-                        query_params += ','
-        
-        # Add paginator
-        query_params += ' LIMIT 20 OFFSET 20;'
-
-        # Build final query for execution
-        base_query += query_params
-        print(f'USE CASE 1 FINAL QUERY: "{base_query}"', flush=True)
-
-        cursor.execute(base_query)
-        result = cursor.fetchall() 
-        cursor.close()
-        return result
-    
-    def print_first_10_ratings(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_ratings WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
-    
-    def print_first_10_tags(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
-    
-    def print_first_10_links(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
-
-    def close_nconnect(self):
-        self.cnx2.close()
-
-    def search_movie(self, movie):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_data WHERE title LIKE" + "'%" + movie + "%';")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
-
     def get_movie_info(self):
         try:
             self.connect_with_root()
@@ -410,14 +283,167 @@ class App:
                               ON m.movie_Id = r.movie_Id
                               SET m.tags = r.tags;""")
             self.cnx2.commit()
+        cursor.close()  
+    
+    
+    # USE CASE 1 FUNCTIONS
+    def get_unique_genres(self):
+        """
+        Extracts all the possible genres in the movies database
+        """
+        
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT genre FROM movies.movies_data;")
+        genres_column = cursor.fetchall()
+        unique_genres = {}
+
+        for row in genres_column:
+            for genre in str(row[0]).split(sep='|'):
+                unique_genres[genre] = None
+
+        print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
         cursor.close()
+        return list(unique_genres.keys())
+    
+    def build_date_query(self, filters) -> str:
+        query_params = ' CAST(SUBSTRING(title, -5, 4) AS SIGNED)'
+        year_before, year_after = filters["year_before"][0], filters["year_after"][0]
+
+        # No filters for years - we skip adding date to our query
+        if year_before == '' and year_after == '':
+            year_before, year_after = 9999, 0
+            query_params += f" BETWEEN {year_after} AND {year_before}"
+    
+        # Both filters for years are selected
+        elif year_before != '' and year_after != '':
+            # 2 years are specified, so we need to check if before < after
+            query_params += f" {'NOT' if year_before < year_after else ''} BETWEEN {year_after} AND {year_before} "
+        else:
+            year_before = year_before if year_before != '' else 9999
+            year_after = year_after if year_after != '' else 0
+            query_params += f" BETWEEN {year_after} AND {year_before} "
+
+        return query_params
+
+    def use_case_1(self, filters):
+        """
+        Our solution to USE CASE 1 is to build a flexible SQL query. The final query is built depending on the user's
+        inputs to the associated radio buttons in use_case_1.html, where the 'name' attribute of the radio button is 
+        the required column name in our movies.movies_data table, and the 'value' attribute of the radio button 
+        corresponds to the sorting order that the user wants. The 'name' and 'value' attribute of every activated radio
+        button is passed into this function via the 'filters' argument.
+
+        E.g. If the user selects the "rating" radio button and ascending sorting order, then the 'filters' object should 
+        contain something like: {'rating': ['asc']}.
+
+        You can select multiple of these filters in the filter form.
+        """
+
+        cursor = self.cnx2.cursor()
+        query_params = ''
+        base_query = 'SELECT * FROM movies.movies_data'
+
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            pass
+        else:                   # The function has received more than 0 filters - we shall process these additional filters
+            filters = filters.to_dict(flat=False)
+            print(f"Filters: {filters}", flush=True)
+
+            # NOTE: The 'genre' filter uses a WHERE clause to get movies with the selected genre, hence
+            # has higher priority than the ORDER BY filters for the radio buttons.
+            if any(column in filters.keys() and filters[column][0] != '' for column in ["genre", "year_before", "year_after"]):
+                query_params += ' WHERE '
+
+                if "genre" in filters.keys():
+                    selected_genre = filters["genre"][0]
+                    query_params += f"genre LIKE '%{selected_genre}%' AND " if selected_genre != "" else ''
+                date_query = self.build_date_query(filters)
+                query_params += date_query if date_query != '' else ''
+            
+            # Select and text boxes must return at least an empty string '' as its value, so these fields will always
+            # be populated. Therefore, we need to delete these from the filters dictionary before proceeding.
+            del filters["genre"], filters["year_before"], filters['year_after']
+            
+            if len(filters) != 0:
+                query_params += ' ORDER BY'
+
+                # Dynamically add sorting filters to query
+                for idx, (col_name, col_filter) in enumerate(filters.items()):
+                    query_params += f' {col_name} {str(col_filter[0]).upper()}'
+                    if idx < len(filters.items()) -1 and len(filters.items()) > 1:
+                        query_params += ','
+        
+        # Add paginator
+        query_params += ' LIMIT 20 OFFSET 20;'
+
+        # Build final query for execution
+        base_query += query_params
+        print(f'USE CASE 1 FINAL QUERY: "{base_query}"', flush=True)
+
+        cursor.execute(base_query)
+        result = cursor.fetchall() 
+        cursor.close()
+        return result
+
+    # USE CASE 2 FUNCTIONS
+    def use_case_2(self, filters):
+        cursor = self.cnx2.cursor()
+        query_params = ''
+        base_query = "SELECT * FROM movies.movies_data"
+
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            query_params = ' LIMIT 20 OFFSET 20;'
+        else:
+            filters = filters.to_dict(flat=False)
+            print(f"Filters: {filters}", flush=True)
+
+            if 'search' in filters.keys():
+                movie_title = filters['search'][0]
+                query_params += f" WHERE title LIKE '%{movie_title}%'"
+
+        # Add paginator
+        # query_params += ' LIMIT 20 OFFSET 20;'
+        base_query += query_params + ';'
+        print(f'USE CASE 2 FINAL QUERY: "{base_query}"', flush=True)
+
+        cursor.execute(base_query)
+        result = cursor.fetchall()
+        print(result)
+        cursor.close()
+        return result
+
+    def print_first_10_ratings(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT * FROM movies.movies_ratings WHERE movie_ID < 10;")
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+    
+    def print_first_10_tags(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+    
+    def print_first_10_links(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
+        result = cursor.fetchall()
+        cursor.close()
+        return result
+
+    def close_nconnect(self):
+        self.cnx2.close()
+
+    
         
 @app.route("/")
 def index():
     return render_template("index.html")
 
-@app.route("/use_case_1", methods=['GET', 'POST'])
-def get_data():
+@app.route("/render_use_case_1", methods=['GET', 'POST'])
+def uc_1():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -458,6 +484,40 @@ def get_data():
         query_res=query_result,
         len=len(headings_display),
         unique_genres=unique_genres,
+        headings_display=headings_display
+    )
+
+
+@app.route("/render_use_case_2", methods=["GET", "POST"])
+def uc_2():
+    app1 = App()
+    app1.set_config()
+    app1.get_csv_data()
+    try:
+        app1.connect_with_root()
+    except Error as e:
+        print("Error while connecting: ", e)
+    if app1.rconnected != False:
+        app1.grant_prev()
+        app1.close_connec_root()
+    try:
+        app1.connect_newuser("movies")
+    except Error as e:
+        print("Error while connecting: ", e)
+    
+    # Load table column names template
+    headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
+        'Lead Actor', 'Rating (Rotten Tomatoes)', 'Rating (Overall)', 'Tags']
+    
+    if request.method == "POST":
+        query_result = app1.use_case_2(filters=request.form)
+    else:
+        query_result = app1.use_case_2(filters=None)
+    
+    return render_template(
+        'use_case_2.html',
+        len=len(headings_display),
+        query_res=query_result,
         headings_display=headings_display
     )
 
@@ -527,36 +587,6 @@ def get_tags():
         #app1.close_nconnect()
     return render_template("view_tags.html", data=app1.print_first_10_tags())
 
-@app.route("/search",  methods=["GET", "POST"])
-def search():
-    return render_template("search.html")
-
-@app.route("/result", methods=["GET", "POST"])
-def result():
-    if request.method == "GET":
-        return f"The URL was accessed directly. Try going to '/search'"
-    if request.method == "POST":
-        result = request.form.get("search")
-        app1 = App()
-        app1.set_config()
-        app1.get_csv_data()
-        try:
-            app1.connect_with_root()
-        except Error as e:
-            print("Error while connecting: ", e)
-        if app1.rconnected != False:
-            app1.grant_prev()
-            app1.close_connec_root()
-        try:
-            app1.connect_newuser("movies")
-        except Error as e:
-            print("Error while connecting: ", e)    
-        if app1.nconnected != False:
-            movied = app1.search_movie(result)
-        if movied != []:
-            return render_template("result.html", result=movied)
-        else:
-            return render_template("result.html", result="No results found")
 
 if __name__ == "__main__":
     app.run(debug=True)
@@ -564,8 +594,3 @@ if __name__ == "__main__":
     #app1.set_config()
     #app1.get_csv_data()
     #app1.get_movie_info()
-
-
-
-
-

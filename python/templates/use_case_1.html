@@ -6,8 +6,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='use_case_1.css') }}">
 {% endblock %}
 
-{% block button_menu %}
-{% endblock button_menu %}
+{% block button_menu %}{% endblock %}
 
 {% block content %}
     <div class="">
@@ -15,7 +14,7 @@
             <h4>Use Case 1</h4>
             <p>Search movies by title, date, genres or ordered ratings.</p>
         </div>
-        <form class="use-case-1-form" action="{{ url_for('get_data') }}" method="POST">
+        <form class="use-case-1-form" action="{{ url_for('uc_1') }}" method="POST">
             <fieldset class="row mb-2">
                 <legend class="col-form-label col-sm-1 pt-0">Title</legend>
                 <div class="col-sm-2">
