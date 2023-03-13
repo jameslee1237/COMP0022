@@ -12,7 +12,7 @@
     <div class="">
         <div class="title">
             <h4>Use Case 3</h4>
-            <p>Analysis of viewers</p>
+            <p>Get ratings for a specific movie and display the average rating for the movies for each user</p>
         </div>
     </div>
     <form class="use-case-2-form" action="{{ url_for('uc_3') }}" method="POST">
@@ -20,38 +20,28 @@
             <legend class="col-form-label col-sm-1 pt-0">Analysis</legend>
             <div class="col-sm-2">
                 <div class="form-floating">
-                    <input type="text" class="form-control" name="search" id="search" placeholder="1"></input>
-                    <label for="search">Search userID</label>
+                    <input type="text" class="form-control" name="search" id="search" placeholder="Movie name..."></input>
+                    <label for="search">Search movie title</label>
                 </div>
             </div>
         </fieldset>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div class="use-case-2-results">
-        <table class="table use-case-2-results-table">
+    <div class="use-case-3-results">
+        <table class="table use-case-3-results-table">
             <thead class="table-dark">
                 <tr>
-                    {% for i in range(0, len) %}
-                        <th scope="col">{{headings_display[i]}}</ths>
-                    {% endfor %}
+                    <th scope="col">User_ID</th>
+                    <th scope="col">Movie ID</th>
+                    <th scope="col">User rating</th>
+                    <th scope="col">User rating avg</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in query_res %}
                     <tr>
-                        {% for j in range(0, len) %}
-                            {% if j == 2 %}
-                                {% set genre_list = row[j].split('|') %}
-                                <td class="genre-list">
-                                    {% for genre in genre_list %}
-                                        <span class="genre-tag">{{genre}}</span>
-                                    {% endfor %}
-                                </td>
-                            {% elif j == 0 %}
-                                <th scope="row">{{row[j]}}</th>
-                            {% else %}
-                                <td>{{row[j]}}</td>
-                            {% endif %}
+                        {% for j in range(0, 3) %}
+                            <td>{{row[j]}}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}

@@ -414,16 +414,18 @@ class App:
 
 
     # USE CASE 3 FUNCTIONS
-    def use_case_3(self,user_ID):
+    def use_case_3(self, title):
         cursor = self.cnx2.cursor()
         query_params = ''
         base_query = "SELECT * FROM movies.movies_ratings"
-        if user_ID is None:     # This condition is activated when a GET request is issued for the webpage
+
+        if title is None:     # This condition is activated when a GET request is issued for the webpage
             query_params = ' LIMIT 20 OFFSET 20;'
+            base_query += query_params
         else:
-            user_ID = user_ID.to_dict(flat=False)['search'][0]
-            query_params += f" WHERE user_ID = {user_ID};"
-        base_query += query_params
+            title = title.to_dict(flat=False)['search'][0]
+            query_params = f"SELECT t1.user_ID, t1.rating, t1.av FROM (SELECT user_ID, rating, AVG(rating) as av FROM movies.movies_ratings GROUP BY user_ID) t1 LEFT JOIN (SELECT r.user_ID FROM movies.movies_ratings r INNER JOIN movies.movies_data d ON r.movie_ID = d.movie_ID WHERE d.title LIKE '%{title}%') t2 ON (t1.user_ID = t2.user_ID);"
+            base_query = query_params
         print(base_query,flush=True)
         cursor.execute(base_query) 
         result = cursor.fetchall()
@@ -551,9 +553,9 @@ def uc_3():
 
     headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
     if request.method == "POST":
-        query_result = app1.use_case_3(user_ID=request.form)
+        query_result = app1.use_case_3(title=request.form)
     else:
-        query_result = app1.use_case_3(user_ID=None)
+        query_result = app1.use_case_3(title=None)
     
     return render_template(
         'use_case_3.html',
