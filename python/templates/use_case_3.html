@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %} Use Case 3 {% endblock %}
+
+{% block css_links %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='use_case_3.css') }}">
+{% endblock  %}
+
+{% block block_menu %}{% endblock  %}
+
+{% block content %}
+    <div class="">
+        <div class="title">
+            <h4>Use Case 3</h4>
+            <p>Analysis of viewers</p>
+        </div>
+    </div>
+    <form class="use-case-3-form" action="{{ url_for('uc_3') }}" method="POST">
+        <fieldset class="row mb-3">
+            <legend class="col-form-label col-sm-1 pt-0">Search Title</legend>
+            <div class="col-sm-3">
+                <div class="form-floating">
+                    <input type="text" class="form-control" name="search" id="search" placeholder="Search for"></input>
+                    <label for="search">Enter movie title</label>
+                </div>
+            </div>
+        </fieldset>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    <div class="use-case-3-results">
+        <table class="table use-case-3-results-table">
+            <thead class="table-dark">
+                <tr>
+                    {% for i in range(0, len) %}
+                        <th scope="col">{{headings_display[i]}}</ths>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in query_res %}
+                    <tr>
+                        {% for j in range(0, len) %}
+                            {% if j == 2 %}
+                                {% set genre_list = row[j].split('|') %}
+                                <td class="genre-list">
+                                    {% for genre in genre_list %}
+                                        <span class="genre-tag">{{genre}}</span>
+                                    {% endfor %}
+                                </td>
+                            {% elif j == 0 %}
+                                <th scope="row">{{row[j]}}</th>
+                            {% else %}
+                                <td>{{row[j]}}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock  %}
