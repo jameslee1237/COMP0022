@@ -3,7 +3,7 @@
 {% block title %} Use Case 3 {% endblock %}
 
 {% block css_links %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='use_case_3.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='use_case_2.css') }}">
 {% endblock  %}
 
 {% block block_menu %}{% endblock  %}
@@ -15,10 +15,10 @@
             <p>Analysis of viewers</p>
         </div>
     </div>
-    <form class="use-case-3-form" action="{{ url_for('uc_3') }}" method="POST">
-        <fieldset class="row mb-3">
+    <form class="use-case-2-form" action="{{ url_for('uc_2') }}" method="POST">
+        <fieldset class="row mb-2">
             <legend class="col-form-label col-sm-1 pt-0">Search Title</legend>
-            <div class="col-sm-3">
+            <div class="col-sm-2">
                 <div class="form-floating">
                     <input type="text" class="form-control" name="search" id="search" placeholder="Search for"></input>
                     <label for="search">Enter movie title</label>
@@ -27,8 +27,8 @@
         </fieldset>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div class="use-case-3-results">
-        <table class="table use-case-3-results-table">
+    <div class="use-case-2-results">
+        <table class="table use-case-2-results-table">
             <thead class="table-dark">
                 <tr>
                     {% for i in range(0, len) %}
