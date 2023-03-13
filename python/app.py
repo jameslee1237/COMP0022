@@ -412,9 +412,20 @@ class App:
         cursor.close()
         return result
 
-    def print_first_10_ratings(self):
+
+    # USE CASE 3 FUNCTIONS
+    def use_case_3(self,user_ID):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_ratings WHERE movie_ID < 10;")
+        query_params = ''
+        base_query = "SELECT * FROM movies.movies_ratings"
+        if user_ID is None:     # This condition is activated when a GET request is issued for the webpage
+            query_params = ' LIMIT 20 OFFSET 20;'
+        else:
+            user_ID = user_ID.to_dict(flat=False)['search'][0]
+            query_params += f" WHERE user_ID = {user_ID};"
+        base_query += query_params
+        print(base_query,flush=True)
+        cursor.execute(base_query) 
         result = cursor.fetchall()
         cursor.close()
         return result
@@ -520,9 +531,9 @@ def uc_2():
         query_res=query_result,
         headings_display=headings_display
     )
-
-@app.route("/view_ratings")
-def get_ratings():
+    
+@app.route("/render_use_case_3", methods=["GET", "POST"])
+def uc_3():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -536,12 +547,20 @@ def get_ratings():
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_ratings.html", data=app1.print_first_10_ratings())
+        print("Error while connecting: ", e)
+
+    headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
+    if request.method == "POST":
+        query_result = app1.use_case_3(user_ID=request.form)
+    else:
+        query_result = app1.use_case_3(user_ID=None)
+    
+    return render_template(
+        'use_case_3.html',
+        len=len(headings_display),
+        query_res=query_result,   
+        headings_display=headings_display
+    )
 
 @app.route("/view_links")
 def get_links():
