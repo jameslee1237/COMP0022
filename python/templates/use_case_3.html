@@ -15,13 +15,45 @@
             <p>Get ratings for a specific movie and display the average rating for the movies for each user</p>
         </div>
     </div>
-    <form class="use-case-2-form" action="{{ url_for('uc_3') }}" method="POST">
+    <form class="use-case-3-form-1" action="{{ url_for('uc_3') }}" method="POST">
         <fieldset class="row mb-2">
-            <legend class="col-form-label col-sm-1 pt-0">Analysis</legend>
+            <legend class="col-form-label col-sm-1 pt-0">Analysis Part 1</legend>
             <div class="col-sm-2">
                 <div class="form-floating">
-                    <input type="text" class="form-control" name="search" id="search" placeholder="Movie name..."></input>
-                    <label for="search">Search movie title</label>
+                    <input type="text" class="form-control" name="search-part1" id="search" placeholder="Movie name..."></input>
+                    <label for="search-part1">Enter movie title</label>
+                </div>
+            </div>
+        </fieldset>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
+    <div class="use-case-3-results">
+        <table class="table use-case-3-results-table">
+            <thead class="table-dark">
+                <tr>
+                    <th scope="col">User_ID</th>
+                    <th scope="col">User rating</th>
+                    <th scope="col">User rating avg</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in query_res %}
+                    <tr>
+                        {% for j in range(0, 3) %}
+                            <td>{{row[j]}}</td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <form class="use-case-3-form-2" action="{{ url_for('uc_3') }}" method="POST">
+        <fieldset class="row mb-2">
+            <legend class="col-form-label col-sm-1 pt-0">Analysis Part 2</legend>
+            <div class="col-sm-2">
+                <div class="form-floating">
+                    <input type="text" class="form-control" name="search-part1" id="search" placeholder="Movie name..."></input>
+                    <label for="search-part1">Enter movie title</label>
                 </div>
             </div>
         </fieldset>

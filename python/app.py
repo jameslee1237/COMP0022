@@ -414,34 +414,62 @@ class App:
 
 
     # USE CASE 3 FUNCTIONS
-    def use_case_3(self, title):
+    def use_case_3(self, filters):
         cursor = self.cnx2.cursor()
         query_params = ''
         base_query = "SELECT * FROM movies.movies_ratings"
 
-        if title is None:     # This condition is activated when a GET request is issued for the webpage
-            query_params = ' LIMIT 20 OFFSET 20;'
-            base_query += query_params
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            base_query += ' LIMIT 20 OFFSET 20;'
         else:
-            title = title.to_dict(flat=False)['search'][0]
+            filters = filters.to_dict(flat=False)
+            print(f"Filters: {filters}", flush=True)
+
+            if 'search-part1' in filters.keys():
+                title_part1 = filters['search-part1'][0]
             
-            base_query = query_params = f"""
-                SELECT A.user_ID, A.rating, B.av
-                FROM (
-                    SELECT * 
-                    FROM movies.movies_ratings
-                    WHERE movie_ID = (
-                        SELECT movie_ID 
-                        FROM movies.movies_data
-                        WHERE title LIKE '%{title}%'
-                    )
-                ) A LEFT JOIN 
-                (
-                    SELECT user_ID, AVG(rating) AS av
-                    FROM movies.movies_ratings
-                    GROUP BY user_ID
-                ) B ON A.user_ID = B.user_ID
-            """
+                base_query = f"""
+                    SELECT A.user_ID, A.rating, B.av
+                    FROM (
+                        SELECT * 
+                        FROM movies.movies_ratings
+                        WHERE movie_ID = (
+                            SELECT movie_ID 
+                            FROM movies.movies_data
+                            WHERE title LIKE '%{title_part1}%'
+                        )
+                    ) A LEFT JOIN 
+                    (
+                        SELECT user_ID, AVG(rating) AS av
+                        FROM movies.movies_ratings
+                        GROUP BY user_ID
+                    ) B ON A.user_ID = B.user_ID LIMIT 5;
+                """
+            
+            if 'search-part2' in filters.keys():
+                # Do query for part2 here, change the required search parameters (title_part2) to
+                # something else if required.
+                title_part2 = filters['search-part2'][0]
+            
+                # Change the base query to part 2 query
+                base_query = f"""
+                    SELECT A.user_ID, A.rating, B.av
+                    FROM (
+                        SELECT * 
+                        FROM movies.movies_ratings
+                        WHERE movie_ID = (
+                            SELECT movie_ID 
+                            FROM movies.movies_data
+                            WHERE title LIKE '%{title_part2}%'
+                        )
+                    ) A LEFT JOIN 
+                    (
+                        SELECT user_ID, AVG(rating) AS av
+                        FROM movies.movies_ratings
+                        GROUP BY user_ID
+                    ) B ON A.user_ID = B.user_ID LIMIT 5;
+                """
+        
         print(base_query,flush=True)
         cursor.execute(base_query) 
         result = cursor.fetchall()
@@ -569,9 +597,9 @@ def uc_3():
 
     headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
     if request.method == "POST":
-        query_result = app1.use_case_3(title=request.form)
+        query_result = app1.use_case_3(filters=request.form)
     else:
-        query_result = app1.use_case_3(title=None)
+        query_result = app1.use_case_3(filters=None)
     
     return render_template(
         'use_case_3.html',
