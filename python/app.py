@@ -424,8 +424,24 @@ class App:
             base_query += query_params
         else:
             title = title.to_dict(flat=False)['search'][0]
-            query_params = f"SELECT t1.user_ID, t1.rating, t1.av FROM (SELECT user_ID, rating, AVG(rating) as av FROM movies.movies_ratings GROUP BY user_ID) t1 LEFT JOIN (SELECT r.user_ID FROM movies.movies_ratings r INNER JOIN movies.movies_data d ON r.movie_ID = d.movie_ID WHERE d.title LIKE '%{title}%') t2 ON (t1.user_ID = t2.user_ID);"
-            base_query = query_params
+            
+            base_query = query_params = f"""
+                SELECT A.user_ID, A.rating, B.av
+                FROM (
+                    SELECT * 
+                    FROM movies.movies_ratings
+                    WHERE movie_ID = (
+                        SELECT movie_ID 
+                        FROM movies.movies_data
+                        WHERE title LIKE '%{title}%'
+                    )
+                ) A LEFT JOIN 
+                (
+                    SELECT user_ID, AVG(rating) AS av
+                    FROM movies.movies_ratings
+                    GROUP BY user_ID
+                ) B ON A.user_ID = B.user_ID
+            """
         print(base_query,flush=True)
         cursor.execute(base_query) 
         result = cursor.fetchall()
