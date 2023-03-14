@@ -12,7 +12,9 @@
     <div class="">
         <div class="title">
             <h4>Use Case 3</h4>
-            <p>Get ratings for a specific movie and display the average rating for the movies for each user</p>
+            <p>Get ratings for a specific movie and display the average rating for the movies for each user.</p>
+            <p>Once submitted, a plot will be generated, displaying the distribution for user ratings of the 
+                specific movie, and their rating history.</p>
         </div>
     </div>
     <form class="use-case-3-form-1" action="{{ url_for('uc_3') }}" method="POST">
@@ -20,63 +22,67 @@
             <legend class="col-form-label col-sm-1 pt-0">Analysis Part 1</legend>
             <div class="col-sm-2">
                 <div class="form-floating">
-                    <input type="text" class="form-control" name="search-part1" id="search" placeholder="Movie name..."></input>
-                    <label for="search-part1">Enter movie title</label>
+                    <input type="text" class="form-control" name="movie_title_field" id="search" placeholder="Movie name..."></input>
+                    <label for="movie_title_field">Enter movie title</label>
                 </div>
             </div>
         </fieldset>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
+    <br>
     <div class="use-case-3-results">
-        <table class="table use-case-3-results-table">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">User_ID</th>
-                    <th scope="col">User rating</th>
-                    <th scope="col">User rating avg</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in query_res %}
-                    <tr>
-                        {% for j in range(0, 3) %}
-                            <td>{{row[j]}}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% set message = context['message'] %}
+        {% if context != None %}
+            {% set correlation = context['correlation'] %}
+            {% set movie_title = context['movie_title'] %}
+            <p>{{ message }}</p>
+            <p>Correlation for {{movie_title}}: {{correlation}}</p>
+        {% else %}
+            <p>{{ message }}</p>
+        {% endif %}
     </div>
-    <form class="use-case-3-form-2" action="{{ url_for('uc_3') }}" method="POST">
-        <fieldset class="row mb-2">
-            <legend class="col-form-label col-sm-1 pt-0">Analysis Part 2</legend>
-            <div class="col-sm-2">
-                <div class="form-floating">
-                    <input type="text" class="form-control" name="search-part1" id="search" placeholder="Movie name..."></input>
-                    <label for="search-part1">Enter movie title</label>
-                </div>
-            </div>
-        </fieldset>
-        <button type="submit" class="btn btn-primary">Search</button>
-    </form>
-    <div class="use-case-3-results">
-        <table class="table use-case-3-results-table">
-            <thead class="table-dark">
-                <tr>
-                    <th scope="col">User_ID</th>
-                    <th scope="col">User rating</th>
-                    <th scope="col">User rating avg</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in query_res %}
-                    <tr>
-                        {% for j in range(0, 3) %}
-                            <td>{{row[j]}}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div>
+        <canvas id="myChart" height="500"></canvas>
     </div>
+    <script>
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var context = {{ context|tojson }};
+        var labels = context['labels'];
+        var query_res = context['query_res'];
+        var movie_title = context['movie_title'];
+
+        let data = {
+            datasets: [{
+                label: "User ratings for " + movie_title,
+                labels: labels,
+                data: query_res,
+                backgroundColor: "#0D6EFD"
+            }]
+        }
+
+        scatterChart = new Chart(ctx, {
+            type: "scatter",
+            data: data,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'User Rating for ' + movie_title
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'User Average Rating History'
+                        }
+                    }
+                },
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
 {% endblock  %}

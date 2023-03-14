@@ -1,5 +1,6 @@
 import mysql.connector
 import pandas as pd
+import numpy as np
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
@@ -33,7 +34,6 @@ class App:
                       
     def get_csv_data(self):
         self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
-        #self.pdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\movies.csv", index_col=False, delimiter=',')
         self.pdata.fillna(0)
         self.pdata.head()
 
@@ -303,7 +303,7 @@ class App:
 
         print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
         cursor.close()
-        return list(unique_genres.keys())
+        return sorted(list(unique_genres.keys()))
     
     def build_date_query(self, filters) -> str:
         query_params = ' CAST(SUBSTRING(title, -5, 4) AS SIGNED)'
@@ -382,6 +382,7 @@ class App:
 
         cursor.execute(base_query)
         result = cursor.fetchall() 
+        print(f'UC1 Results: {result}', flush=True)
         cursor.close()
         return result
 
@@ -414,67 +415,88 @@ class App:
 
 
     # USE CASE 3 FUNCTIONS
+    def correlation(self, query_result):
+        user_ratings = [float(row[1]) for row in query_result]      # row[1] corresponds to the user rating
+        user_av_ratings = [row[2] for row in query_result]          # row[2] corresopnds to the user average rating
+        correlation = np.corrcoef(user_ratings, user_av_ratings)
+
+        # np.corrcoef returns a 2x2 matrix, with the coefficient in [0, 1] and [1, 0].
+        return correlation[0][1]
+    
+    def uc3_process_query_for_plot(self, query_results):
+        """
+        We process query results for use case 5 such that it is compatible for plotting using Chart.js
+        """
+
+        labels = []
+        data = []
+
+        for row in query_results:
+            labels.append(row[0])
+            data.append({'x': row[1], 'y': row[2]})
+
+        return labels, data
+
     def use_case_3(self, filters):
+        """
+        Our solution to USE CASE 3 is, given a VALID movie title:
+        1) Find the corresponding movie ID for the target movie title. If the title doesn't exist, we throw
+           an error
+        2) Select all users that have rated the movie
+        3) For every user that rated the movie, we calculate their rating history average
+
+        Based on this data, we then perform simple correlation analysis and plot our results
+        """
+
         cursor = self.cnx2.cursor()
-        query_params = ''
-        base_query = "SELECT * FROM movies.movies_ratings"
 
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
-            base_query += ' LIMIT 20 OFFSET 20;'
-        else:
+            return None
+        else:                   # This condition is activated if 
             filters = filters.to_dict(flat=False)
             print(f"Filters: {filters}", flush=True)
 
-            if 'search-part1' in filters.keys():
-                title_part1 = filters['search-part1'][0]
-            
-                base_query = f"""
-                    SELECT A.user_ID, A.rating, B.av
-                    FROM (
-                        SELECT * 
+            query_params = ''
+            movie_title = ''
+            context = dict.fromkeys(['message', 'query_result', 'correlation', 'movie_title'])
+
+            if 'movie_title_field' in filters.keys():
+                movie_title = filters['movie_title_field'][0]
+                query_params = f" WHERE title LIKE '%{movie_title}%'"
+
+            base_query = f"""
+                SELECT A.user_ID, A.rating, B.av 
+                    FROM ( SELECT * 
                         FROM movies.movies_ratings
                         WHERE movie_ID = (
                             SELECT movie_ID 
                             FROM movies.movies_data
-                            WHERE title LIKE '%{title_part1}%'
+                            {query_params}
                         )
                     ) A LEFT JOIN 
                     (
                         SELECT user_ID, AVG(rating) AS av
                         FROM movies.movies_ratings
                         GROUP BY user_ID
-                    ) B ON A.user_ID = B.user_ID LIMIT 5;
-                """
-            
-            if 'search-part2' in filters.keys():
-                # Do query for part2 here, change the required search parameters (title_part2) to
-                # something else if required.
-                title_part2 = filters['search-part2'][0]
-            
-                # Change the base query to part 2 query
-                base_query = f"""
-                    SELECT A.user_ID, A.rating, B.av
-                    FROM (
-                        SELECT * 
-                        FROM movies.movies_ratings
-                        WHERE movie_ID = (
-                            SELECT movie_ID 
-                            FROM movies.movies_data
-                            WHERE title LIKE '%{title_part2}%'
-                        )
-                    ) A LEFT JOIN 
-                    (
-                        SELECT user_ID, AVG(rating) AS av
-                        FROM movies.movies_ratings
-                        GROUP BY user_ID
-                    ) B ON A.user_ID = B.user_ID LIMIT 5;
-                """
-        
-        print(base_query,flush=True)
-        cursor.execute(base_query) 
-        result = cursor.fetchall()
-        cursor.close()
-        return result
+                    ) B ON A.user_ID = B.user_ID;
+            """
+            cursor.execute(base_query) 
+            result = cursor.fetchall()
+            cursor.close()
+
+            correlation = self.correlation(result)
+            processed_labels, processed_data = self.uc3_process_query_for_plot(result)
+            print(f"result: {result}", flush=True)
+            print(f"data correlation: {correlation}", flush=True)
+            print(f"processed labels: {processed_labels}", flush=True)
+            print(f"processed data: {processed_data}", flush=True)
+
+            context["message"] = 'Completed analysis for use case 3'
+            context["movie_title"] = movie_title
+            context["labels"] = processed_labels
+            context["query_res"] = processed_data
+            context["correlation"] = correlation
+            return context        
     
     def print_first_10_tags(self):
         cursor = self.cnx2.cursor()
@@ -530,8 +552,8 @@ def uc_1():
 
     # POST button events
     if request.method == "POST":
-        # Pass the POST form filter data to execute query
-        query_result = app1.use_case_1(filters=request.form)
+        retrieved_form_data = request.form
+        query_result = app1.use_case_1(filters=retrieved_form_data)
     else:
         # Fetch query result
         query_result = app1.use_case_1(filters=None)
@@ -597,14 +619,14 @@ def uc_3():
 
     headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
     if request.method == "POST":
-        query_result = app1.use_case_3(filters=request.form)
+        context = app1.use_case_3(filters=request.form)
     else:
-        query_result = app1.use_case_3(filters=None)
+        context = app1.use_case_3(filters=None)
     
     return render_template(
         'use_case_3.html',
         len=len(headings_display),
-        query_res=query_result,   
+        context=context,
         headings_display=headings_display
     )
 
