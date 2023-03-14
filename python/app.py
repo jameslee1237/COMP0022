@@ -471,15 +471,35 @@ class App:
                 """
         
         print(base_query,flush=True)
-        cursor.execute(base_query) 
+        cursor.execute(base_query)
         result = cursor.fetchall()
         cursor.close()
         return result
     
-    def print_first_10_tags(self):
+    # USE CASE 5 FUNCTIONS
+    def use_case_5(self, filters):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
+        query_params = ''
+        base_query = "SELECT * FROM movies.movies_data"
+
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            query_params = ' LIMIT 20 OFFSET 20;'
+        else:
+            filters = filters.to_dict(flat=False)
+            print(f"Filters: {filters}", flush=True)
+
+            if 'search' in filters.keys():
+                movie_title = filters['search'][0]
+                query_params += f" WHERE title LIKE '%{movie_title}%'"
+
+        # Add paginator
+        # query_params += ' LIMIT 20 OFFSET 20;'
+        base_query += query_params + ';'
+        print(f'USE CASE 5 FINAL QUERY: "{base_query}"', flush=True)
+
+        cursor.execute(base_query)
         result = cursor.fetchall()
+        print(result)
         cursor.close()
         return result
     
@@ -607,7 +627,39 @@ def uc_3():
         query_res=query_result,   
         headings_display=headings_display
     )
-
+@app.route("/render_use_case_5", methods=["GET", "POST"])
+def uc_5():
+    app1 = App()
+    app1.set_config()
+    app1.get_csv_data()
+    try:
+        app1.connect_with_root()
+    except Error as e:
+        print("Error while connecting: ", e)
+    if app1.rconnected != False:
+        app1.grant_prev()
+        app1.close_connec_root()
+    try:
+        app1.connect_newuser("movies")
+    except Error as e:
+        print("Error while connecting: ", e)
+    
+    # Load table column names template
+    headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
+        'Lead Actor', 'Rating (Rotten Tomatoes)', 'Rating (Overall)', 'Tags']
+    
+    if request.method == "POST":
+        query_result = app1.use_case_5(filters=request.form)
+    else:
+        query_result = app1.use_case_5(filters=None)
+    
+    return render_template(
+        'use_case_5.html',
+        len=len(headings_display),
+        query_res=query_result,
+        headings_display=headings_display
+    )
+    
 @app.route("/view_links")
 def get_links():
     app1 = App()

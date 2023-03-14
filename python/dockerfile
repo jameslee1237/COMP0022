@@ -20,7 +20,7 @@ COPY static /usr/app/src/static
 
 WORKDIR /usr/app/src/templates
 
-COPY templates/base.html templates/index.html templates/use_case_1.html templates/use_case_2.html  templates/use_case_3.html templates/view_links.html templates/view_tags.html ./
+COPY templates/base.html templates/index.html templates/use_case_1.html templates/use_case_2.html  templates/use_case_3.html templates/use_case_5.html templates/view_links.html templates/view_tags.html ./
 
 WORKDIR /usr/app/src
 
