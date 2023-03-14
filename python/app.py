@@ -423,16 +423,15 @@ class App:
         # np.corrcoef returns a 2x2 matrix, with the coefficient in [0, 1] and [1, 0].
         return correlation[0][1]
     
-    def uc3_process_query_for_plot(self, query_results):
+    def uc3_prepare_data_for_plot(self, query_results):
         """
         We process query results for use case 5 such that it is compatible for plotting using Chart.js
         """
 
-        labels = []
-        data = []
+        labels, data = [], []
 
         for row in query_results:
-            labels.append(row[0])
+            labels.append(f'User ID: {row[0]}')
             data.append({'x': row[1], 'y': row[2]})
 
         return labels, data
@@ -485,7 +484,7 @@ class App:
             cursor.close()
 
             correlation = self.correlation(result)
-            processed_labels, processed_data = self.uc3_process_query_for_plot(result)
+            processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
             print(f"result: {result}", flush=True)
             print(f"data correlation: {correlation}", flush=True)
             print(f"processed labels: {processed_labels}", flush=True)

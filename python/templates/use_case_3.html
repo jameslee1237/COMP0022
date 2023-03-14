@@ -60,29 +60,41 @@
             }]
         }
 
+        let options = {
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: true,
+                        text: 'User Rating for ' + movie_title
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'User Average Rating History'
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            let label = ctx.dataset.labels[ctx.dataIndex];
+                            return [label, "User Rating for " + movie_title + ": " + ctx.parsed.x, "User Average Rating: " + ctx.parsed.y]
+                        }
+                    }
+                }
+            }
+        }
+
         scatterChart = new Chart(ctx, {
             type: "scatter",
             data: data,
-            options: {
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                        title: {
-                            display: true,
-                            text: 'User Rating for ' + movie_title
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'User Average Rating History'
-                        }
-                    }
-                },
-                responsive: true,
-                maintainAspectRatio: false
-            }
+            options: options
         });
     </script>
 {% endblock  %}
