@@ -456,29 +456,50 @@ class App:
             print(f"Filters: {filters}", flush=True)
 
             query_params = ''
-            movie_title = ''
-            context = dict.fromkeys(['message', 'query_result', 'correlation', 'movie_title'])
+            base_query = ''
+            context = dict.fromkeys(['message', 'query_result', 'correlation', 'movie_title', 'unique_genres'])
 
-            if 'movie_title_field' in filters.keys():
-                movie_title = filters['movie_title_field'][0]
-                query_params = f" WHERE title LIKE '%{movie_title}%'"
+            movie_title = filters['movie_title_field'][0]
+            selected_subcase = filters['selected_subcase'][0]
+            genre_filter = filters['genre'][0]
+            print(f'genre filter: {genre_filter}', flush=True)
 
-            base_query = f"""
-                SELECT A.user_ID, A.rating, B.av 
-                    FROM ( SELECT * 
-                        FROM movies.movies_ratings
-                        WHERE movie_ID = (
-                            SELECT movie_ID 
-                            FROM movies.movies_data
-                            {query_params}
-                        )
-                    ) A LEFT JOIN 
-                    (
-                        SELECT user_ID, AVG(rating) AS av
-                        FROM movies.movies_ratings
-                        GROUP BY user_ID
-                    ) B ON A.user_ID = B.user_ID;
-            """
+            if selected_subcase == 'subcase1':
+                # We need to pass an error message if the user selects a genre for case 1!
+                if genre_filter != '' or movie_title == '':
+                    context['message'] = 'Unexpected filters for case 1. Check your movie and genre filters again!'
+                    return context
+                else:
+                    print('use case 3 subcase 1', flush=True)
+                    base_query = f"""
+                        SELECT A.user_ID, A.rating, B.av 
+                            FROM ( SELECT * 
+                                FROM movies.movies_ratings
+                                WHERE movie_ID = (
+                                    SELECT movie_ID 
+                                    FROM movies.movies_data
+                                    WHERE title LIKE '%{movie_title}%'
+                                )
+                            ) A LEFT JOIN 
+                            (
+                                SELECT user_ID, AVG(rating) AS av
+                                FROM movies.movies_ratings
+                                GROUP BY user_ID
+                            ) B ON A.user_ID = B.user_ID;
+                    """
+            elif selected_subcase == 'subcase2':
+                if genre_filter == '' or movie_title == '':
+                    context['message'] = 'Unexpected filters for case 2. Check your movie and genre filters again!'
+                    return context
+                else:
+                    print('use case 3 subcase 2', flush=True)
+                    base_query = f"""
+                        
+                    """
+
+            
+            print(base_query, flush=True)
+
             cursor.execute(base_query) 
             result = cursor.fetchall()
             cursor.close()
@@ -490,7 +511,7 @@ class App:
             print(f"processed labels: {processed_labels}", flush=True)
             print(f"processed data: {processed_data}", flush=True)
 
-            context["message"] = 'Completed analysis for use case 3'
+            context["message"] = 'Completed analysis for Subcase 1!'
             context["movie_title"] = movie_title
             context["labels"] = processed_labels
             context["query_res"] = processed_data
@@ -617,6 +638,10 @@ def uc_3():
         print("Error while connecting: ", e)
 
     headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
+
+    # Fetch unique genres of the table to populate selection button in UI
+    unique_genres = app1.get_unique_genres()
+
     if request.method == "POST":
         context = app1.use_case_3(filters=request.form)
     else:
@@ -626,6 +651,7 @@ def uc_3():
         'use_case_3.html',
         len=len(headings_display),
         context=context,
+        unique_genres=unique_genres,
         headings_display=headings_display
     )
 
