@@ -12,14 +12,22 @@
     <div class="">
         <div class="title">
             <h4>Use Case 3</h4>
-            <p>Get ratings for a specific movie and display the average rating for the movies for each user.</p>
-            <p>Once submitted, a plot will be generated, displaying the distribution for user ratings of the 
-                specific movie, and their rating history.</p>
+            <p>This use case is split into two subcases. Provided that the form inputs are valid,
+                our solutions for each subcase are as follows:</p>
+            <p>Subcase 1: Given a movie title, for every user, we calculate the correlation between 
+                the average rating for his/her reviews, and their rating for the specific movie.
+            </p>
+            <p>Subcase 2: Given a movie title and a specific genre, for every user, we calculate the 
+                correlation between the average rating for his/her reviews of movies under the target 
+                genre, and their rating for the specific movie.
+            </p>
+            <p>NOTE: We strictly design our solution based on the requirements, e.g., subcase 1 will
+                only produce a solution if the movie title is entered AND the genre is not selected.
+            </p>
         </div>
     </div>
     <form class="use-case-3-form-1" action="{{ url_for('uc_3') }}" method="POST">
         <fieldset class="row mb-2">
-            <legend class="col-form-label col-sm-1 pt-0">Analysis Part 1</legend>
             <div class="col-sm-2">
                 <div class="form-floating">
                     <input type="text" class="form-control" name="movie_title_field" id="search" placeholder="Movie name..."></input>
