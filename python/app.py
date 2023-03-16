@@ -473,7 +473,8 @@ class App:
                     print('use case 3 subcase 1', flush=True)
                     base_query = f"""
                         SELECT A.user_ID, A.rating, B.av 
-                            FROM ( SELECT * 
+                            FROM (
+                                SELECT * 
                                 FROM movies.movies_ratings
                                 WHERE movie_ID = (
                                     SELECT movie_ID 
@@ -487,36 +488,79 @@ class App:
                                 GROUP BY user_ID
                             ) B ON A.user_ID = B.user_ID;
                     """
+
+                    cursor.execute(base_query) 
+                    result = cursor.fetchall()
+                    cursor.close()
+
+                    correlation = self.correlation(result)
+                    processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
+                    print(f"result: {result}", flush=True)
+                    print(f"data correlation: {correlation}", flush=True)
+                    print(f"processed labels: {processed_labels}", flush=True)
+                    print(f"processed data: {processed_data}", flush=True)
+
+                    context["message"] = 'Completed analysis for Subcase 1!'
+                    context["movie_title"] = movie_title
+                    context["labels"] = processed_labels
+                    context["query_res"] = processed_data
+                    context["correlation"] = correlation
+                    return context        
+            
             elif selected_subcase == 'subcase2':
                 if genre_filter == '' or movie_title == '':
                     context['message'] = 'Unexpected filters for case 2. Check your movie and genre filters again!'
                     return context
                 else:
                     print('use case 3 subcase 2', flush=True)
+                    
+                    # Query to get average user rating based on selected genre
                     base_query = f"""
-                        
+                        SELECT C.user_ID, D.rating, C.av
+                        FROM (
+                            SELECT B.user_ID, AVG(B.rating) as av
+                            FROM movies.movies_ratings AS B
+                            INNER JOIN (
+                                SELECT movie_ID
+                                FROM movies.movies_data
+                                WHERE genre LIKE '%{genre_filter}%'
+                            ) AS A
+                            ON B.movie_ID = A.movie_ID
+                            GROUP BY B.user_ID
+                        ) AS C
+                        INNER JOIN (
+                            SELECT user_ID, rating
+                            FROM movies.movies_ratings
+                            WHERE movie_ID = (
+                                SELECT movie_ID 
+                                FROM movies.movies_data
+                                WHERE title LIKE '%{movie_title}%'
+                            )
+                        ) AS D
+                        ON C.user_ID = D.user_ID
                     """
 
+                    print(base_query, flush=True)
+                    cursor.execute(base_query)
+                    result = cursor.fetchall()
+                    print(f"Subcase 2 results: {result}", flush=True)
+
+                    cursor.close()
+
+                    correlation = self.correlation(result)
+                    processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
+                    print(f"result: {result}", flush=True)
+                    print(f"data correlation: {correlation}", flush=True)
+                    print(f"processed labels: {processed_labels}", flush=True)
+                    print(f"processed data: {processed_data}", flush=True)
+
+                    context["message"] = 'Completed analysis for Subcase 2!'
+                    context["movie_title"] = movie_title
+                    context["labels"] = processed_labels
+                    context["query_res"] = processed_data
+                    context["correlation"] = correlation
+                    return context       
             
-            print(base_query, flush=True)
-
-            cursor.execute(base_query) 
-            result = cursor.fetchall()
-            cursor.close()
-
-            correlation = self.correlation(result)
-            processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
-            print(f"result: {result}", flush=True)
-            print(f"data correlation: {correlation}", flush=True)
-            print(f"processed labels: {processed_labels}", flush=True)
-            print(f"processed data: {processed_data}", flush=True)
-
-            context["message"] = 'Completed analysis for Subcase 1!'
-            context["movie_title"] = movie_title
-            context["labels"] = processed_labels
-            context["query_res"] = processed_data
-            context["correlation"] = correlation
-            return context        
     
     def print_first_10_tags(self):
         cursor = self.cnx2.cursor()
