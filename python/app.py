@@ -415,38 +415,38 @@ class App:
 
 
     # USE CASE 3 FUNCTIONS
-    def correlation(self, query_result):
+    def get_user_rating_correlation(self, query_result):
+        """
+        Calculates the correlation coefficients between user rating for a specific movie title and user 
+        average rating
+
+        @params query_result: A SQL result consisting of 3 columns: User ID, User rating for a specific
+            film & User rating history (average rating for all reviews)
+        """
         user_ratings = [float(row[1]) for row in query_result]      # row[1] corresponds to the user rating
         user_av_ratings = [row[2] for row in query_result]          # row[2] corresopnds to the user average rating
-        correlation = np.corrcoef(user_ratings, user_av_ratings)
+        correlation_coefficient = np.corrcoef(user_ratings, user_av_ratings)[0][1]
+        return correlation_coefficient
 
-        # np.corrcoef returns a 2x2 matrix, with the coefficient in [0, 1] and [1, 0].
-        return correlation[0][1]
-    
     def uc3_prepare_data_for_plot(self, query_results):
         """
-        We process query results for use case 5 such that it is compatible for plotting using Chart.js
+        Processes the query results for use case 3 such that it is compatible for plotting using Chart.js.
+        This includes updating labels (column 0), and combining rating data colummns into (x,y) pairs for
+        plotting.
+
+        @params query_result: A SQL result consisting of 3 columns: User ID, User rating for a specific
+            film & User rating history (average rating for all reviews)
         """
 
         labels, data = [], []
 
         for row in query_results:
-            labels.append(f'User ID: {row[0]}')
-            data.append({'x': row[1], 'y': row[2]})
+            labels.append(f'User ID: {row[0]}')         # Add label to user id for visualisation in Chart.js
+            data.append({'x': row[1], 'y': row[2]})     # Combine rating data columns into x,y pairs for plotting
 
         return labels, data
 
     def use_case_3(self, filters):
-        """
-        Our solution to USE CASE 3 is, given a VALID movie title:
-        1) Find the corresponding movie ID for the target movie title. If the title doesn't exist, we throw
-           an error
-        2) Select all users that have rated the movie
-        3) For every user that rated the movie, we calculate their rating history average
-
-        Based on this data, we then perform simple correlation analysis and plot our results
-        """
-
         cursor = self.cnx2.cursor()
 
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
@@ -493,7 +493,7 @@ class App:
                     result = cursor.fetchall()
                     cursor.close()
 
-                    correlation = self.correlation(result)
+                    correlation = self.get_user_rating_correlation(result)
                     processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
                     print(f"result: {result}", flush=True)
                     print(f"data correlation: {correlation}", flush=True)
@@ -547,7 +547,7 @@ class App:
 
                     cursor.close()
 
-                    correlation = self.correlation(result)
+                    correlation = self.get_user_rating_correlation(result)
                     processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
                     print(f"result: {result}", flush=True)
                     print(f"data correlation: {correlation}", flush=True)
