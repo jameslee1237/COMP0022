@@ -1,5 +1,6 @@
 import mysql.connector
 import pandas as pd
+import numpy as np
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
@@ -33,7 +34,6 @@ class App:
                       
     def get_csv_data(self):
         self.pdata = pd.read_csv(r"./movies.csv", index_col=False, delimiter=',')
-        #self.pdata = pd.read_csv(r"C:\Users\jlee0\Desktop\COMP0022\python\movies.csv", index_col=False, delimiter=',')
         self.pdata.fillna(0)
         self.pdata.head()
 
@@ -303,7 +303,7 @@ class App:
 
         print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
         cursor.close()
-        return list(unique_genres.keys())
+        return sorted(list(unique_genres.keys()))
     
     def build_date_query(self, filters) -> str:
         query_params = ' CAST(SUBSTRING(title, -5, 4) AS SIGNED)'
@@ -382,6 +382,7 @@ class App:
 
         cursor.execute(base_query)
         result = cursor.fetchall() 
+        print(f'UC1 Results: {result}', flush=True)
         cursor.close()
         return result
 
@@ -414,67 +415,160 @@ class App:
 
 
     # USE CASE 3 FUNCTIONS
+    def get_user_rating_correlation(self, query_result):
+        """
+        Calculates the correlation coefficients between user rating for a specific movie title and user 
+        average rating
+
+        @params query_result: A SQL result consisting of 3 columns: User ID, User rating for a specific
+            film & User rating history (average rating for all reviews)
+        """
+        user_ratings = [float(row[1]) for row in query_result]      # row[1] corresponds to the user rating
+        user_av_ratings = [row[2] for row in query_result]          # row[2] corresopnds to the user average rating
+        correlation_coefficient = np.corrcoef(user_ratings, user_av_ratings)[0][1]
+        return correlation_coefficient
+
+    def uc3_prepare_data_for_plot(self, query_results):
+        """
+        Processes the query results for use case 3 such that it is compatible for plotting using Chart.js.
+        This includes updating labels (column 0), and combining rating data colummns into (x,y) pairs for
+        plotting.
+
+        @params query_result: A SQL result consisting of 3 columns: User ID, User rating for a specific
+            film & User rating history (average rating for all reviews)
+        """
+
+        labels, data = [], []
+
+        for row in query_results:
+            labels.append(f'User ID: {row[0]}')         # Add label to user id for visualisation in Chart.js
+            data.append({'x': row[1], 'y': row[2]})     # Combine rating data columns into x,y pairs for plotting
+
+        return labels, data
+
     def use_case_3(self, filters):
         cursor = self.cnx2.cursor()
-        query_params = ''
-        base_query = "SELECT * FROM movies.movies_ratings"
 
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
-            base_query += ' LIMIT 20 OFFSET 20;'
-        else:
+            return None
+        else:                   # This condition is activated if 
             filters = filters.to_dict(flat=False)
-            print(f"Filters: {filters}", flush=True)
+            # print(f"Filters: {filters}", flush=True)
+            
+            base_query = ''
+            context = dict.fromkeys(['message', 'query_result', 'correlation', 'movie_title', 'unique_genres'])
 
-            if 'search-part1' in filters.keys():
-                title_part1 = filters['search-part1'][0]
+            movie_title = filters['movie_title_field'][0]
+            selected_subcase = filters['selected_subcase'][0]
+            genre_filter = filters['genre'][0]
+            # print(f'genre filter: {genre_filter}', flush=True)
+
+            if selected_subcase == 'subcase1':
+                # We need to pass an error message if the user selects a genre for case 1!
+                if genre_filter != '' or movie_title == '':
+                    context['message'] = 'Unexpected filters for case 1. Check your movie and genre filters again!'
+                    return context
+                else:
+                    result = None
+                    # print('use case 3 subcase 1', flush=True)
+                    try:
+                        base_query = f"""
+                            SELECT A.user_ID, A.rating, B.av 
+                                FROM (
+                                    SELECT * 
+                                    FROM movies.movies_ratings
+                                    WHERE movie_ID = (
+                                        SELECT movie_ID 
+                                        FROM movies.movies_data
+                                        WHERE title LIKE '%{movie_title}%'
+                                    )
+                                ) A LEFT JOIN 
+                                (
+                                    SELECT user_ID, AVG(rating) AS av
+                                    FROM movies.movies_ratings
+                                    GROUP BY user_ID
+                                ) B ON A.user_ID = B.user_ID;
+                        """
+                        cursor.execute(base_query) 
+                        result = cursor.fetchall()
+                        cursor.close()
+                        correlation = self.get_user_rating_correlation(result)
+                        processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
+                        
+                        # print(f"result: {result}", flush=True)
+                        # print(f"data correlation: {correlation}", flush=True)
+                        # print(f"processed labels: {processed_labels}", flush=True)
+                        # print(f"processed data: {processed_data}", flush=True)
+
+                        context["message"] = 'Completed analysis for Subcase 1!'
+                        context["movie_title"] = movie_title
+                        context["labels"] = processed_labels
+                        context["query_res"] = processed_data
+                        context["correlation"] = correlation
+                    except mysql.connector.errors.DataError:
+                        context["message"] = f'There are multiple movie titles for "{movie_title}" that you entered. Please enter the exact movie title.'
+                   
+                    return context        
             
-                base_query = f"""
-                    SELECT A.user_ID, A.rating, B.av
-                    FROM (
-                        SELECT * 
-                        FROM movies.movies_ratings
-                        WHERE movie_ID = (
-                            SELECT movie_ID 
-                            FROM movies.movies_data
-                            WHERE title LIKE '%{title_part1}%'
-                        )
-                    ) A LEFT JOIN 
-                    (
-                        SELECT user_ID, AVG(rating) AS av
-                        FROM movies.movies_ratings
-                        GROUP BY user_ID
-                    ) B ON A.user_ID = B.user_ID LIMIT 5;
-                """
+            elif selected_subcase == 'subcase2':
+                if genre_filter == '' or movie_title == '':
+                    context['message'] = 'Unexpected filters for case 2. Check your movie and genre filters again!'
+                    return context
+                else:
+                    result = None
+                    # print('use case 3 subcase 2', flush=True)
+                    try:
+                    
+                        # Query to get average user rating based on selected genre
+                        base_query = f"""
+                            SELECT C.user_ID, D.rating, C.av
+                            FROM (
+                                SELECT B.user_ID, AVG(B.rating) as av
+                                FROM movies.movies_ratings AS B
+                                INNER JOIN (
+                                    SELECT movie_ID
+                                    FROM movies.movies_data
+                                    WHERE genre LIKE '%{genre_filter}%'
+                                ) AS A
+                                ON B.movie_ID = A.movie_ID
+                                GROUP BY B.user_ID
+                            ) AS C
+                            INNER JOIN (
+                                SELECT user_ID, rating
+                                FROM movies.movies_ratings
+                                WHERE movie_ID = (
+                                    SELECT movie_ID 
+                                    FROM movies.movies_data
+                                    WHERE title LIKE '%{movie_title}%'
+                                )
+                            ) AS D
+                            ON C.user_ID = D.user_ID
+                        """
+
+                        # print(base_query, flush=True)
+                        cursor.execute(base_query)
+                        result = cursor.fetchall()
+                        # print(f"Subcase 2 results: {result}", flush=True)
+
+                        cursor.close()
+
+                        correlation = self.get_user_rating_correlation(result)
+                        processed_labels, processed_data = self.uc3_prepare_data_for_plot(result)
+                        
+                        # print(f"result: {result}", flush=True)
+                        # print(f"data correlation: {correlation}", flush=True)
+                        # print(f"processed labels: {processed_labels}", flush=True)
+                        # print(f"processed data: {processed_data}", flush=True)
+
+                        context["message"] = 'Completed analysis for Subcase 2!'
+                        context["movie_title"] = movie_title
+                        context["labels"] = processed_labels
+                        context["query_res"] = processed_data
+                        context["correlation"] = correlation
+                    except mysql.connector.errors.DataError:
+                        context["message"] = f'There are multiple movie titles for "{movie_title}" that you entered. Please enter the exact movie title.'
+                    return context       
             
-            if 'search-part2' in filters.keys():
-                # Do query for part2 here, change the required search parameters (title_part2) to
-                # something else if required.
-                title_part2 = filters['search-part2'][0]
-            
-                # Change the base query to part 2 query
-                base_query = f"""
-                    SELECT A.user_ID, A.rating, B.av
-                    FROM (
-                        SELECT * 
-                        FROM movies.movies_ratings
-                        WHERE movie_ID = (
-                            SELECT movie_ID 
-                            FROM movies.movies_data
-                            WHERE title LIKE '%{title_part2}%'
-                        )
-                    ) A LEFT JOIN 
-                    (
-                        SELECT user_ID, AVG(rating) AS av
-                        FROM movies.movies_ratings
-                        GROUP BY user_ID
-                    ) B ON A.user_ID = B.user_ID LIMIT 5;
-                """
-        
-        print(base_query,flush=True)
-        cursor.execute(base_query)
-        result = cursor.fetchall()
-        cursor.close()
-        return result
     
     # USE CASE 5 FUNCTIONS
     def use_case_5(self, filters):
@@ -550,8 +644,8 @@ def uc_1():
 
     # POST button events
     if request.method == "POST":
-        # Pass the POST form filter data to execute query
-        query_result = app1.use_case_1(filters=request.form)
+        retrieved_form_data = request.form
+        query_result = app1.use_case_1(filters=retrieved_form_data)
     else:
         # Fetch query result
         query_result = app1.use_case_1(filters=None)
@@ -616,15 +710,20 @@ def uc_3():
         print("Error while connecting: ", e)
 
     headings_display = ['user_ID', 'movie_ID', 'rating', 'timestamp']
+
+    # Fetch unique genres of the table to populate selection button in UI
+    unique_genres = app1.get_unique_genres()
+
     if request.method == "POST":
-        query_result = app1.use_case_3(filters=request.form)
+        context = app1.use_case_3(filters=request.form)
     else:
-        query_result = app1.use_case_3(filters=None)
+        context = app1.use_case_3(filters=None)
     
     return render_template(
         'use_case_3.html',
         len=len(headings_display),
-        query_res=query_result,   
+        context=context,
+        unique_genres=unique_genres,
         headings_display=headings_display
     )
 @app.route("/render_use_case_5", methods=["GET", "POST"])

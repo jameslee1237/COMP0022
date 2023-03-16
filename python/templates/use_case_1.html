@@ -17,7 +17,7 @@
         <form class="use-case-1-form" action="{{ url_for('uc_1') }}" method="POST">
             <fieldset class="row mb-2">
                 <legend class="col-form-label col-sm-1 pt-0">Title</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="title" id="title-asc" value="asc">
                         <label class="form-check-label" for="title-asc">ASC</label>
@@ -28,7 +28,7 @@
                     </div>
                 </div>
                 <legend class="col-form-label col-sm-1 pt-0">Ratings (RT)</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="rotten_tomatoes" id="ratings-rt-asc" value="asc">
                         <label class="form-check-label" for="ratings-rt-asc">ASC</label>
@@ -39,7 +39,7 @@
                     </div>
                 </div>
                 <legend class="col-form-label col-sm-1 pt-0">Ratings (Ov.)</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="rating" id="ratings-asc" value="asc">
                         <label class="form-check-label" for="ratings-asc">ASC</label>
@@ -52,7 +52,7 @@
             </fieldset>
             <fieldset class="row">
                 <legend class="col-form-label col-sm-1 pt-0">Genres</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-floating">
                         <select class="form-select" name="genre" id="genre-select">
                             <!-- Add a default option "None" to prevent filtering on genre column -->
@@ -65,17 +65,17 @@
                     </div>
                 </div>
                 <legend class="col-form-label col-sm-1 pt-0">Before Year</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-floating">
                         <input type="text" class="form-control" name="year_before" id="year_before" placeholder="2023" value="">
-                        <label for="year_before">Enter year before</label>
+                        <label for="year_before">Enter year</label>
                     </div>
                 </div>
                 <legend class="col-form-label col-sm-1 pt-0">After Year</legend>
-                <div class="col-sm-2">
+                <div class="col-sm-1">
                     <div class="form-floating">
                         <input type="text" class="form-control" name="year_after" id="year_after" placeholder="2023" value="">
-                        <label for="year_after">Enter year after</label>
+                        <label for="year_after">Enter year</label>
                     </div>
                 </div>
             </fieldset>

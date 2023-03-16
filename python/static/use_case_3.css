@@ -34,6 +34,14 @@ td, th {
 }
 
 
+.message {
+    width: 100%;
+    padding: 10px 25px;
+    border-radius: 5px;
+    background-color: lightblue;
+}
+
+
 @media only screen and (max-width:768px) {
     .use-case-2-results {
         font-size: 12px;
