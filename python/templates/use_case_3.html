@@ -126,27 +126,6 @@
             }
         }
 
-        const scatterArbitraryLine = {
-            id: 'scatterArbitraryLine',
-            beforeDatasetDraw(chart, args, pluginOptions) {
-                const { ctx, chartArea: {top, bottom, left, right, width, height}, scales: {x, y} } = chart;
-                ctx.save();
-
-                lines();
-                
-                function lines() {
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#71C253';
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x.getPixelForValue(0), y.getPixlForValue(5));
-                    ctx.lineTo(x.getPixelForValue(5), y.getPixlForValue(5));
-                    ctx.stroke();
-                    ctx.closePath();
-                    ctx.restore();
-                }
-            }
-        }
-
         scatterChart = new Chart(ctx, {
             data: data,
             options: options

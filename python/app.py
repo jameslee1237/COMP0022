@@ -570,34 +570,44 @@ class App:
                     return context       
             
     
-    def predict_aggregate_ratings(self, query_results):
+    def predict_aggregate_ratings(self, ratings_data):
         """
         We use the least squares method for making predictions.
         """
 
-        query_results = [(row[0], float(row[1])) for row in query_results]
-        query_results = np.array(query_results)
+        ratings_data = [(row[0], float(row[1])) for row in ratings_data]
+        ratings_data = np.array(ratings_data)
 
-        # Split data into training and testing sets
-        X = query_results[:, 0].reshape((-1, 1))        # UserID
-        y = query_results[:, 1]                         # User ratings
+        X = ratings_data[:, 0]      # user ids
+        y = ratings_data[:, 1]      # user ratings
 
-        # Add bias
-        X = np.hstack([X, np.ones((X.shape[0], 1))])
+        # List to store predictions of aggregate ratings of different preview sizes
+        preview_size_labels = []
+        actual_aggregate_ratings = []
+        predicted_aggregate_ratings = []
 
-        # Split data into training and testing set
-        n = X.shape[0]  
-        n_train = int(0.8 * n)          # 80:20 split for training & testing sets
-        X_train, X_test = X[:n_train], X[n_train:]
-        y_train, y_test = y[:n_train], y[n_train:]
-        
-        weights = np.linalg.lstsq(X_train, y_train, rcond=None)[0]
+        for preview_size in range(3, 20):
+            preview_size_labels.append(preview_size)
+            # Choose a small subset of ratings as the preview audience
+            preview_indices = np.random.choice(len(X), size=preview_size, replace=False)
+            preview_ratings = y[preview_indices]
 
-        y_preview = np.dot(X_test, weights)
+            # Remove the preview audience from the training set
+            X_train = np.delete(X, preview_indices)
+            y_train = np.delete(y, preview_indices)
 
-        aggregate_ratings_pred = np.mean(y_preview)
-        aggregate_ratings_actual = np.mean(query_results[:, 1])
-        return aggregate_ratings_pred, aggregate_ratings_actual
+            # Compute coefficients of linear regression model
+            A = np.vstack([X_train, np.ones(len(X_train))]).T
+            coeffs, _, _, _ = np.linalg.lstsq(A, y_train, rcond=None)
+
+            # Make predictions for overall rating
+            X_all = np.unique(X)
+            y_all_pred = np.dot(np.vstack([X_all, np.ones(len(X_all))]).T, coeffs)
+
+            actual_aggregate_ratings.append(np.mean(y))
+            predicted_aggregate_ratings.append(np.mean(y_all_pred))
+
+        return preview_size_labels, actual_aggregate_ratings, predicted_aggregate_ratings
 
 
     # USE CASE 5 FUNCTIONS        
@@ -632,10 +642,11 @@ class App:
                 result = cursor.fetchall()
                 cursor.close()
 
-                aggregate_prediction, aggregate_actual = self.predict_aggregate_ratings(result)
+                preview_size_labels, actual_av_ratings, predicted_av_ratings = self.predict_aggregate_ratings(result)
 
-                context['actual_av'] = aggregate_actual
-                context['predicted_av'] = aggregate_prediction
+                context['preview_size_labels'] = preview_size_labels
+                context['actual_av'] = actual_av_ratings
+                context['predicted_av'] = predicted_av_ratings
                 context['movie_title'] = movie_title
                 context['message'] = f'Completed ratings prediction for {movie_title}'
                 return context
