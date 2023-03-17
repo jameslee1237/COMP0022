@@ -570,33 +570,77 @@ class App:
                     return context       
             
     
-    # USE CASE 5 FUNCTIONS
+    def predict_aggregate_ratings(self, query_results):
+        """
+        We use the least squares method for making predictions.
+        """
+
+        query_results = [(row[0], float(row[1])) for row in query_results]
+        query_results = np.array(query_results)
+
+        # Split data into training and testing sets
+        X = query_results[:, 0].reshape((-1, 1))        # UserID
+        y = query_results[:, 1]                         # User ratings
+
+        # Add bias
+        X = np.hstack([X, np.ones((X.shape[0], 1))])
+
+        # Split data into training and testing set
+        n = X.shape[0]  
+        n_train = int(0.8 * n)          # 80:20 split for training & testing sets
+        X_train, X_test = X[:n_train], X[n_train:]
+        y_train, y_test = y[:n_train], y[n_train:]
+        
+        weights = np.linalg.lstsq(X_train, y_train, rcond=None)[0]
+
+        y_preview = np.dot(X_test, weights)
+
+        aggregate_ratings_pred = np.mean(y_preview)
+        aggregate_ratings_actual = np.mean(query_results[:, 1])
+        return aggregate_ratings_pred, aggregate_ratings_actual
+
+
+    # USE CASE 5 FUNCTIONS        
     def use_case_5(self, filters):
         cursor = self.cnx2.cursor()
-        query_params = ''
-        base_query = "SELECT * FROM movies.movies_data"
 
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
-            query_params = ' LIMIT 20 OFFSET 20;'
+            return None
         else:
+            base_query = ''
+            context = dict.fromkeys(['message', 'movie_title', 'actual_av', 'predicted_av'])
+
             filters = filters.to_dict(flat=False)
-            print(f"Filters: {filters}", flush=True)
+            # print(f"Filters: {filters}", flush=True)
+            
+            if 'movie_title' in filters.keys():
+                movie_title = filters['movie_title'][0]
+            
+                base_query = f"""
+                    SELECT user_ID, rating 
+                    FROM movies.movies_ratings
+                    WHERE movie_ID = (
+                        SELECT movie_ID
+                        FROM movies.movies_data
+                        WHERE title LIKE '%{movie_title}%'
+                    )
+                """
 
-            if 'search' in filters.keys():
-                movie_title = filters['search'][0]
-                query_params += f" WHERE title LIKE '%{movie_title}%'"
+                # print(f'USE CASE 5 FINAL QUERY: "{base_query}"', flush=True)
 
-        # Add paginator
-        # query_params += ' LIMIT 20 OFFSET 20;'
-        base_query += query_params + ';'
-        print(f'USE CASE 5 FINAL QUERY: "{base_query}"', flush=True)
+                cursor.execute(base_query)
+                result = cursor.fetchall()
+                cursor.close()
 
-        cursor.execute(base_query)
-        result = cursor.fetchall()
-        print(result)
-        cursor.close()
-        return result
-    
+                aggregate_prediction, aggregate_actual = self.predict_aggregate_ratings(result)
+
+                context['actual_av'] = aggregate_actual
+                context['predicted_av'] = aggregate_prediction
+                context['movie_title'] = movie_title
+                context['message'] = f'Completed ratings prediction for {movie_title}'
+                return context
+            return None
+
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
@@ -726,6 +770,7 @@ def uc_3():
         unique_genres=unique_genres,
         headings_display=headings_display
     )
+
 @app.route("/render_use_case_5", methods=["GET", "POST"])
 def uc_5():
     app1 = App()
@@ -743,66 +788,16 @@ def uc_5():
     except Error as e:
         print("Error while connecting: ", e)
     
-    # Load table column names template
-    headings_display = ['Movie ID', 'Title', 'Genre(s)', 'Content', 'Director',
-        'Lead Actor', 'Rating (Rotten Tomatoes)', 'Rating (Overall)', 'Tags']
-    
     if request.method == "POST":
-        query_result = app1.use_case_5(filters=request.form)
+        context = app1.use_case_5(filters=request.form)
     else:
-        query_result = app1.use_case_5(filters=None)
+        context = app1.use_case_5(filters=None)
     
     return render_template(
         'use_case_5.html',
-        len=len(headings_display),
-        query_res=query_result,
-        headings_display=headings_display
+        context=context,
     )
     
-@app.route("/view_links")
-def get_links():
-    app1 = App()
-    app1.set_config()
-    app1.get_csv_data()
-    try:
-        app1.connect_with_root()
-    except Error as e:
-        print("Error while connecting: ", e)
-    if app1.rconnected != False:
-        app1.grant_prev()
-        app1.close_connec_root()
-    try:
-        app1.connect_newuser("movies")
-    except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_links.html", data=app1.print_first_10_links())
-
-@app.route("/view_tags")
-def get_tags():
-    app1 = App()
-    app1.set_config()
-    app1.get_csv_data()
-    try:
-        app1.connect_with_root()
-    except Error as e:
-        print("Error while connecting: ", e)
-    if app1.rconnected != False:
-        app1.grant_prev()
-        app1.close_connec_root()
-    try:
-        app1.connect_newuser("movies")
-    except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_tags.html", data=app1.print_first_10_tags())
-
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -17,38 +17,26 @@
     </div>
     <form class="use-case-2-form" action="{{ url_for('uc_5') }}" method="POST">
         <fieldset class="row mb-2">
-            <legend class="col-form-label col-sm-1 pt-0">Prediction</legend>
             <div class="col-sm-2">
                 <div class="form-floating">
-                    <input type="text" class="form-control" name="search" id="search" placeholder="1"></input>
-                    <label for="search">Type Movie title</label>
-                </div>
-                <div class="form-floating">
-                    <input type="text" class="form-control" name="search" id="search" placeholder="1"></input>
-                    <label for="search">Type the number of preivews</label>
+                    <input type="text" class="form-control" name="movie_title" id="search" placeholder="1"></input>
+                    <label for="movie_title">Type Movie title</label>
                 </div>
             </div>
         </fieldset>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
     <div class="use-case-2-results">
-        <table class="table use-case-2-results-table">
-            <thead class="table-dark">
-                <tr>
-                    {% for i in range(0, len) %}
-                        <th scope="col">{{headings_display[i]}}</ths>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in query_res %}
-                    <tr>
-                        {% for j in range(0, len) %}
-                            <td>{{row[j]}}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        {% if context != None %}
+            {% set actual_av = context['actual_av'] %}
+            {% set predicted_av = context['predicted_av'] %}
+            {% set movie_title = context['movie_title'] %}
+
+            {% if message != None %}
+                <p class="message">{{ message }}</p>
+                <p>Actual aggregated rating for {{ movie_title }}: {{ actual_av }}</p>
+                <p>Predicted aggregated rating for {{ movie_title }}: {{ predicted_av }}</p>
+            {% endif %}
+        {% endif %}
     </div>
 {% endblock  %}
