@@ -594,6 +594,7 @@ class App:
             cursor.execute("""SELECT tag, GROUP_CONCAT(movies_data.movie_Id) as movie_Id FROM movies_tags, movies_data 
                               WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY tag;""")
             result = cursor.fetchall()
+            return result
 
 
 
@@ -751,7 +752,9 @@ def uc4():
         app1.connect_newuser("movies")
     except Error as e:
         print("Error while connecting: ", e)
-    return render_template("use_case_4.html")
+    item = app1.use_case_4()
+    return render_template("use_case_4.html", result=item)
+
 
 @app.route("/view_links")
 def get_links():
