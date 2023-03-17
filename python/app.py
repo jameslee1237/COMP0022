@@ -569,7 +569,35 @@ class App:
                         context["message"] = f'There are multiple movie titles for "{movie_title}" that you entered. Please enter the exact movie title.'
                     return context       
             
+    #USE CASE 4 FUNCTION
+    def get_correlation(self, query_result):
+        """
+        Calculates the correlation coefficients between user rating for a specific movie title and user 
+        average rating
+
+        @params query_result: A SQL result consisting of 3 columns: User tags for a specific film, User rating for a specific
+            film and genre of the film
+        """
+        user_ratings = [float(row[1]) for row in query_result]      # row[1] corresponds to the user rating
+        user_av_ratings = [row[2] for row in query_result]          # row[2] corresopnds to the user average rating
+        correlation_coefficient = np.corrcoef(user_ratings, user_av_ratings)[0][1]
+        return correlation_coefficient
     
+    def use_case_4(self, filters):
+        cursor = self.cnx2.cursor()
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            return None
+        else:                   # This condition is activated if
+            filters = filters.to_dict(flat=False)
+
+            base_query = ''
+            cursor.execute("""SELECT tag, GROUP_CONCAT(movies_data.movie_Id) as movie_Id FROM movies_tags, movies_data 
+                              WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY tag;""")
+            result = cursor.fetchall()
+
+
+
+
     def print_first_10_tags(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
@@ -706,6 +734,24 @@ def uc_3():
         unique_genres=unique_genres,
         headings_display=headings_display
     )
+
+@app.route("/render_use_case_4", methods=["GET", "POST"])
+def uc4():
+    app1 = App()
+    app1.set_config()
+    app1.get_csv_data()
+    try:
+        app1.connect_with_root()
+    except Error as e:
+        print("Error while connecting: ", e)
+    if app1.rconnected != False:
+        app1.grant_prev()
+        app1.close_connec_root()
+    try:
+        app1.connect_newuser("movies")
+    except Error as e:
+        print("Error while connecting: ", e)
+    return render_template("use_case_4.html")
 
 @app.route("/view_links")
 def get_links():
