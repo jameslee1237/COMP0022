@@ -576,7 +576,7 @@ class App:
     #USE CASE 4 FUNCTION
     def use_case_4(self):
         base_query = ''
-        context = dict.fromkeys(['user', 'tag-genre', 'tag-rating', 'result'])
+        context = dict.fromkeys(['user', 'all_data', 'result'])
         cursor = self.cnx2.cursor()
         cursor.execute("""SELECT mt.user_ID, mt.movie_ID, 
                           GROUP_CONCAT(mt.tag) as tag,
@@ -666,10 +666,13 @@ class App:
 
         labels = [glabels, rlabels]
         data = [gdata, rdata]
-
+        all_data = dict.fromkeys(['rlabels', 'rdata', 'glabels', 'gdata'])
+        all_data['rlabels'] = rlabels
+        all_data['rdata'] = rdata
+        all_data['glabels'] = glabels
+        all_data['gdata'] = gdata
         context['user'] = result['user_id'].unique().tolist()
-        context['labels'] = labels
-        context['data'] = data 
+        context['all_data'] = all_data
         context['result'] = c_result
         return context
 
@@ -829,10 +832,8 @@ def uc4():
         print("Error while connecting: ", e)
     item = app1.use_case_4()
     heading = list(item.keys())
-    labels = item['labels']
-    data = item['data']
     l = len(heading)
-    return render_template("use_case_4.html", result=item['result'], heading=heading, len=l, labels=labels, data=data)
+    return render_template("use_case_4.html", result=item['result'], heading=heading, len=l, all_data=item['all_data'])
 
 
 @app.route("/view_links")

@@ -12,82 +12,106 @@
     <div class="">
         <div class="title">
             <h4>Use Case 4</h4>
+            
         </div>
     </div>
     <div>
-        <canvas id="myChart" height="500"></canvas>
-    </div>
-    <script>
-        var ctx = document.getElementById("myChart").getContext("2d");
-        var labels = "{{ labels[0]}}"
-        var data = "{{ data[0]}}"
+        <canvas id="myChart" height="200"></canvas>
+        <canvas id="myChart2" height="200"></canvas>
+        <script>
+            var all_data = {{all_data|tojson}};
+            var rdata = all_data['rdata'];
+            var gdata = all_data['gdata'];
+            var rlabels = all_data['rlabels'];
+            var glabels = all_data['glabels'];
 
-        let data = {
-            datasets: [{
+            var ctx = document.getElementById("myChart").getContext("2d");
+            var ctx2 = document.getElementById("myChart2").getContext("2d");
+            var myChart = new Chart(ctx, {
                 type: "scatter",
-                labels: labels,
-                data: data,
-                backgroundColor: "#0D6EFD"
-            }]
-        }
-
-        let options = {
-            scales: {
-                x: {
-                    min: 0,
-                    max: 5,
-                    type: 'linear',
-                    position: 'bottom',
-                    title: {
-                        display: false,
-                        text: 'User_id'
-                    }
+                data: {
+                    datasets: [{
+                        label: 'Scatter Plot',
+                        data: rdata,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    }]
                 },
-                y: {
-                    min: 0,
-                    max: 5,
+                options : {
                     title: {
                         display: true,
-                        text: 'Correlation'
+                        text: 'Correlation scatter plot'
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'linear',
+                            position: 'bottom',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'User_id'
+                            }
+                        }],
+                        yAxes: [{
+                            type: 'linear',
+                            position: 'left',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Correlation'
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data){
+                                return rlabels[tooltipItem.index]
+                            }
+                        }
                     }
                 }
-            },
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                tooltip: {
-                    callbacks: {
+            });
+            var myChart2 = new Chart(ctx2, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: 'Scatter Plot',
+                        data: gdata,
+                        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                    }]
+                },
+                options : {
+                    title: {
+                        display: true,
+                        text: 'Correlation scatter plot'
+                    },
+                    scales: {
+                        xAxes: [{
+                            type: 'linear',
+                            position: 'bottom',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'User_id'
+                            }
+                        }],
+                        yAxes: [{
+                            type: 'linear',
+                            position: 'left',
+                            scaleLabel: {
+                                display: true,
+                                labelString: 'Correlation'
+                            }
+                        }]
+                    },
+                    tooltips: {
+                        callbacks: {
+                            label: function(tooltipItem, data){
+                                return glabels[tooltipItem.index]
+                            }
+                        }
                     }
                 }
-            }
-        }
+            });
+        </script>
+    </div>
 
-        const scatterArbitraryLine = {
-            id: 'scatterArbitraryLine',
-            beforeDatasetDraw(chart, args, pluginOptions) {
-                const { ctx, chartArea: {top, bottom, left, right, width, height}, scales: {x, y} } = chart;
-                ctx.save();
-
-                lines();
-                
-                function lines() {
-                    ctx.beginPath();
-                    ctx.strokeStyle = '#71C253';
-                    ctx.lineWidth = 1;
-                    ctx.moveTo(x.getPixelForValue(0), y.getPixlForValue(5));
-                    ctx.lineTo(x.getPixelForValue(5), y.getPixlForValue(5));
-                    ctx.stroke();
-                    ctx.closePath();
-                    ctx.restore();
-                }
-            }
-        }
-
-        scatterChart = new Chart(ctx, {
-            data: data,
-            options: options
-        });
-    </script>
     <div class="use-case-2-results">
         <table class="table use-case-2-results-table">
             <thead class="table-dark">
