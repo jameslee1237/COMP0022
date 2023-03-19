@@ -14,9 +14,80 @@
             <h4>Use Case 4</h4>
         </div>
     </div>
-    <div class="use-case-3-results">
-        <p class="message">{{ corr }}</p>
+    <div>
+        <canvas id="myChart" height="500"></canvas>
     </div>
+    <script>
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var labels = "{{ labels[0]}}"
+        var data = "{{ data[0]}}"
+
+        let data = {
+            datasets: [{
+                type: "scatter",
+                labels: labels,
+                data: data,
+                backgroundColor: "#0D6EFD"
+            }]
+        }
+
+        let options = {
+            scales: {
+                x: {
+                    min: 0,
+                    max: 5,
+                    type: 'linear',
+                    position: 'bottom',
+                    title: {
+                        display: false,
+                        text: 'User_id'
+                    }
+                },
+                y: {
+                    min: 0,
+                    max: 5,
+                    title: {
+                        display: true,
+                        text: 'Correlation'
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                    }
+                }
+            }
+        }
+
+        const scatterArbitraryLine = {
+            id: 'scatterArbitraryLine',
+            beforeDatasetDraw(chart, args, pluginOptions) {
+                const { ctx, chartArea: {top, bottom, left, right, width, height}, scales: {x, y} } = chart;
+                ctx.save();
+
+                lines();
+                
+                function lines() {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#71C253';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(x.getPixelForValue(0), y.getPixlForValue(5));
+                    ctx.lineTo(x.getPixelForValue(5), y.getPixlForValue(5));
+                    ctx.stroke();
+                    ctx.closePath();
+                    ctx.restore();
+                }
+            }
+        }
+
+        scatterChart = new Chart(ctx, {
+            data: data,
+            options: options
+        });
+    </script>
     <div class="use-case-2-results">
         <table class="table use-case-2-results-table">
             <thead class="table-dark">

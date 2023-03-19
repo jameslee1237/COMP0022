@@ -652,9 +652,24 @@ class App:
 
             g_corr_list.append(g_corr)
             r_corr_list.append(r_corr) 
+        
+        glabels, gdata = [], []
+
+        for y, x in zip(g_corr_list, result['user_id'].unique().tolist()):
+            glabels.append(f'User ID: {x}')         # Add label to user id for visualisation in Chart.js
+            gdata.append({'x': x, 'y': y})     # Combine rating data columns into x,y pairs for plotting
+        
+        rlabels, rdata = [], []
+        for y, x in zip(r_corr_list, result['user_id'].unique().tolist()):
+            rlabels.append(f'User ID: {x}')         # Add label to user id for visualisation in Chart.js
+            rdata.append({'x': x, 'y': y})
+
+        labels = [glabels, rlabels]
+        data = [gdata, rdata]
+
         context['user'] = result['user_id'].unique().tolist()
-        context['tag-genre'] = g_corr_list
-        context['tag-rating'] = r_corr_list   
+        context['labels'] = labels
+        context['data'] = data 
         context['result'] = c_result
         return context
 
@@ -814,9 +829,10 @@ def uc4():
         print("Error while connecting: ", e)
     item = app1.use_case_4()
     heading = list(item.keys())
-    corr = [item['tag-genre'], item['tag-rating']]
+    labels = item['labels']
+    data = item['data']
     l = len(heading)
-    return render_template("use_case_4.html", result=item['result'], heading=heading, corr = corr, len=l)
+    return render_template("use_case_4.html", result=item['result'], heading=heading, len=l, labels=labels, data=data)
 
 
 @app.route("/view_links")
