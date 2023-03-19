@@ -14,12 +14,26 @@
             <h4>Use Case 4</h4>
         </div>
     </div>
+    <div class="use-case-3-results">
+        <p class="message">{{ corr }}</p>
+    </div>
     <div class="use-case-2-results">
         <table class="table use-case-2-results-table">
+            <thead class="table-dark">
+                <tr>
+                    {% for i in range(0, len) %}
+                        <th scope="col">{{heading[i]}}</ths>
+                    {% endfor %}
+                </tr>
+            </thead>
             <tbody>
-                {% for key, value in result.items() %}
+                {% for row in result %}
                     <tr>
-                        <th>{{key}} : {{value}}</th>
+                        {% for j in range(0, len) %}
+                            <td>
+                                {{row[j]}}
+                            </td>
+                        {% endfor %}
                     </tr>
                 {% endfor %}
             </tbody>

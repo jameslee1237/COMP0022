@@ -578,8 +578,6 @@ class App:
         base_query = ''
         context = dict.fromkeys(['user', 'tag-genre', 'tag-rating', 'result'])
         cursor = self.cnx2.cursor()
-        #cursor.execute("""SELECT user_id, tag, GROUP_CONCAT(movies_data.genre) as genre, GROUP_CONCAT(movies_data.rating) as rating FROM movies_tags, movies_data 
-        #                  WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY user_id;""")
         cursor.execute("""SELECT mt.user_ID, mt.movie_ID, 
                           GROUP_CONCAT(mt.tag) as tag,
                           GROUP_CONCAT(DISTINCT md.genre) as genres,
@@ -588,7 +586,11 @@ class App:
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
                           GROUP BY mt.user_ID, mt.movie_ID;""")
         result = cursor.fetchall()
-        c_result = result
+        cursor.execute("""SELECT mt.tag, GROUP_CONCAT(movies_data.title) as title, GROUP_CONCAT(movies_data.genre) as genre
+                          FROM movies_tags mt
+                          INNER JOIN movies_data ON mt.movie_Id = movies_data.movie_Id
+                          GROUP BY mt.tag;""")
+        c_result = cursor.fetchall()
         idx = ["user_id", "movie_id", "tags", "genres", "rating"]
         result = pd.DataFrame(result, columns=idx)
         result['genres'] = result['genres'].str.split('|')
@@ -811,8 +813,10 @@ def uc4():
     except Error as e:
         print("Error while connecting: ", e)
     item = app1.use_case_4()
-    l = len(item)   
-    return render_template("use_case_4.html", result=item, len=l)
+    heading = list(item.keys())
+    corr = [item['tag-genre'], item['tag-rating']]
+    l = len(heading)
+    return render_template("use_case_4.html", result=item['result'], heading=heading, corr = corr, len=l)
 
 
 @app.route("/view_links")
