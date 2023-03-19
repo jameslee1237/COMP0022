@@ -1,10 +1,15 @@
 import mysql.connector
 import pandas as pd
 import numpy as np
+import itertools
+import matplotlib.pyplot as plt
+import seaborn as sns
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
 from flask import Flask, render_template, request, url_for
+from sklearn.feature_extraction.text import CountVectorizer
+from operator import methodcaller
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -578,25 +583,63 @@ class App:
         @params query_result: A SQL result consisting of 3 columns: User tags for a specific film, User rating for a specific
             film and genre of the film
         """
+
+
         user_ratings = [float(row[1]) for row in query_result]      # row[1] corresponds to the user rating
         user_av_ratings = [row[2] for row in query_result]          # row[2] corresopnds to the user average rating
         correlation_coefficient = np.corrcoef(user_ratings, user_av_ratings)[0][1]
         return correlation_coefficient
     
-    def use_case_4(self, filters):
+    def use_case_4(self):
+        base_query = ''
+        context = dict.fromkeys(['message', 'correlation', 'tags', 'genres','unique_genres', 'rating'])
         cursor = self.cnx2.cursor()
-        if filters is None:     # This condition is activated when a GET request is issued for the webpage
-            return None
-        else:                   # This condition is activated if
-            filters = filters.to_dict(flat=False)
+        #cursor.execute("""SELECT user_id, tag, GROUP_CONCAT(movies_data.genre) as genre, GROUP_CONCAT(movies_data.rating) as rating FROM movies_tags, movies_data 
+        #                  WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY user_id;""")
+        cursor.execute("""SELECT mt.user_ID, 
+                          GROUP_CONCAT(DISTINCT mt.movie_ID) as movie_ID, 
+                          GROUP_CONCAT(mt.tag) as tag,
+                          GROUP_CONCAT(DISTINCT md.genre) as genres,
+                          GROUP_CONCAT(DISTINCT md.rating) as rating
+                          FROM movies_tags mt
+                          INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
+                          GROUP BY mt.user_ID;""")
+        result = cursor.fetchall()
+        user1 = result[0]
+        user1_tag = user1[2].split(',')
+        user1_genre = user1[3].split(',')
+        print(user1_genre, flush=True)
+        return result
+        tags = [row[0] for row in result]
+        genres = [row[1].split(',') for row in result]
+        genres = [list(itertools.chain.from_iterable(list(map(methodcaller("split", "|"), l)))) for l in genres]
+        ratings = [row[2] for row in result]
+        unique_genres = set()
+        for genre in genres:
+            for g in genre:
+                unique_genres.add(g)
+        unique_genres = list(unique_genres)
+        corpus = tags + [' '.join(genre) for genre in genres]
+        vectorizer = CountVectorizer()
+        X = vectorizer.fit_transform(corpus)
+        features = vectorizer.get_feature_names_out()
+        df = pd.DataFrame(X.toarray(), columns=features, index=corpus)
+        tags_df = df.loc[tags]
+        genres_df = df.loc[[' '.join(genre) for genre in genres]]
 
-            base_query = ''
-            cursor.execute("""SELECT tag, GROUP_CONCAT(movies_data.movie_Id) as movie_Id FROM movies_tags, movies_data 
-                              WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY tag;""")
-            result = cursor.fetchall()
-            return result
+        corr_matrix = tags_df.corrwith(genres_df, axis=1)
+        corr_matrix = corr_matrix.values.reshape(len(tags), len(genres))
 
+        sns.heatmap(corr_matrix, xticklabels=[' '.join(genre) for genre in genres], yticklabels=tags, annot=True, cmap='coolwarm')
 
+        plt.savefig('/var/lib/mysql/heatmap.png')
+
+        context['tags'] = tags
+        context['genres'] = genres
+        context['unique_genres'] = unique_genres
+        context['rating'] = ratings  
+
+        return result
 
 
     def print_first_10_tags(self):
@@ -753,7 +796,8 @@ def uc4():
     except Error as e:
         print("Error while connecting: ", e)
     item = app1.use_case_4()
-    return render_template("use_case_4.html", result=item)
+    l = len(item)   
+    return render_template("use_case_4.html", result=item, len=l)
 
 
 @app.route("/view_links")

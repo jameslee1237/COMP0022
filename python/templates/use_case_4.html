@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %} Use Case 3 {% endblock %}
+{% block title %} Use Case 4 {% endblock %}
 
 {% block css_links %}
     <link rel="stylesheet" href="{{ url_for('static', filename='use_case_3.css') }}">
@@ -14,4 +14,13 @@
             <h4>Use Case 4</h4>
         </div>
     </div>
+    <div class="use-case-2-results">
+        <table class="table use-case-2-results-table">
+            <tbody>
+                {% for key, value in result.items() %}
+                    <tr>
+                        <th>{{key}} : {{value}}</th>
+                    </tr>
+                {% endfor %}
+            </tbody>
 {% endblock %}
