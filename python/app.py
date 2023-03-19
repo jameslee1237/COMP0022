@@ -6,9 +6,9 @@ from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
 from flask import Flask, render_template, request, url_for
-from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.preprocessing import LabelEncoder
 from operator import methodcaller
-from scipy.stats import pearsonr
+from scipy.stats import spearmanr
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -588,6 +588,26 @@ class App:
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
                           GROUP BY mt.user_ID, mt.movie_ID;""")
         result = cursor.fetchall()
+        idx = ["user_id", "movie_id", "tags", "genres", "rating"]
+        result = pd.DataFrame(result, columns=idx)
+        result['genres'] = result['genres'].str.split('|')
+        result['genres'] = result['genres'].apply(lambda x: ", ".join(x))
+        result['tags'] = result['tags'].apply(lambda x: x.lower())
+        tag_LE = LabelEncoder()
+        genre_LE = LabelEncoder()
+        all_tags = ",".join(result['tags'])
+        all_genres = ",".join(result['genres'])
+        unique_tags = list(set(all_tags.split(",")))
+        unique_genres = list(set(all_genres.split(",")))
+        tag_LE.fit(unique_tags)
+        genre_LE.fit(unique_genres)
+        def encode_tags(tags):
+            return [tag_LE.transform([tag])[0] for tag in tags.split(",")]
+        def encode_genres(genres):
+            return [genre_LE.transform([genre])[0] for genre in genres.split(",")]
+        result['encoded_tags'] = result['tags'].apply(encode_tags)
+        result['encoded_genres'] = result['genres'].apply(encode_genres)
+        return result
         l = []
         for x in range(0, 7):
             user = result[4 + x]
@@ -601,14 +621,10 @@ class App:
             user_tags = user[2].split(',')
             user_genre = user[3].split('|')
             user_rating = user[4]
-            corpus = user_tags + user_genre
-            vectorizer = CountVectorizer()
-            vectorizer.fit(["".join(user_tags), "".join(user_genre)])
-            X = vectorizer.transform(["".join(user_tags), "".join(user_genre)])
-            correlation, _ = pearsonr(X[0,:].toarray()[0], X[1,:].toarray()[0])
+            print(en_tags, en_genre, flush=True)
+            break
+            correlation, _ = spearmanr(en_tags, en_genre)
             c_list.append(correlation)
-        correlation = sum(c_list)/len(c_list)
-        print(correlation, flush=True)
         return result
 
         return result
