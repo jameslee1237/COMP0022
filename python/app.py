@@ -8,7 +8,7 @@ from mysql.connector import errorcode
 from flask import Flask, render_template, request, url_for
 from sklearn.preprocessing import LabelEncoder
 from operator import methodcaller
-from scipy.stats import spearmanr
+from scipy.stats import pearsonr, spearmanr
 
 
 app = Flask(__name__, static_url_path='/static')
@@ -576,7 +576,7 @@ class App:
     #USE CASE 4 FUNCTION
     def use_case_4(self):
         base_query = ''
-        context = dict.fromkeys(['message', 'correlation', 'tags', 'genres','unique_genres', 'rating'])
+        context = dict.fromkeys(['user', 'tag-genre', 'tag-rating', 'result'])
         cursor = self.cnx2.cursor()
         #cursor.execute("""SELECT user_id, tag, GROUP_CONCAT(movies_data.genre) as genre, GROUP_CONCAT(movies_data.rating) as rating FROM movies_tags, movies_data 
         #                  WHERE movies_tags.movie_Id = movies_data.movie_Id GROUP BY user_id;""")
@@ -588,6 +588,7 @@ class App:
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
                           GROUP BY mt.user_ID, mt.movie_ID;""")
         result = cursor.fetchall()
+        c_result = result
         idx = ["user_id", "movie_id", "tags", "genres", "rating"]
         result = pd.DataFrame(result, columns=idx)
         result['genres'] = result['genres'].str.split('|')
@@ -607,27 +608,53 @@ class App:
             return [genre_LE.transform([genre])[0] for genre in genres.split(",")]
         result['encoded_tags'] = result['tags'].apply(encode_tags)
         result['encoded_genres'] = result['genres'].apply(encode_genres)
-        return result
-        l = []
-        for x in range(0, 7):
-            user = result[4 + x]
-            l.append(user)
-        user1_1 = result[0]
-        user1_2 = result[1]
-        user1_3 = result[2]
-        l2 = -1.0
-        c_list = []
-        for user in l:
-            user_tags = user[2].split(',')
-            user_genre = user[3].split('|')
-            user_rating = user[4]
-            print(en_tags, en_genre, flush=True)
-            break
-            correlation, _ = spearmanr(en_tags, en_genre)
-            c_list.append(correlation)
-        return result
+        result['rating'] = result['rating'].fillna(0)
+        for idx in result.index[result['rating'] == "N/A"].tolist():
+            result.loc[idx, 'rating'] = 0
+        result['rating'] = result['rating'].apply(lambda x: float(x))
+        g_corr_list, r_corr_list = [], []
+        for user_id in result['user_id'].unique():
+            user_data = result[(result['user_id'] == user_id)]
 
-        return result
+            encoded_tags = user_data['encoded_tags'].values.tolist()
+            encoded_genres = user_data['encoded_genres'].values.tolist()
+            ratings = user_data['rating'].values.tolist()
+            flat_tags = np.array([tag for tags in encoded_tags for tag in tags])
+            flat_genres = np.array([genre for genres in encoded_genres for genre in genres])
+
+            if len(flat_genres) < 2:
+                flat_genres = np.append(flat_genres, 0)
+            if len(flat_tags) < 2:
+                flat_tags = np.append(flat_tags, 0)
+            if len(ratings) < 2:
+                ratings = np.append(ratings, 0)
+
+            if len(flat_tags) > len(flat_genres):
+                flat_genres = np.pad(flat_genres, (0, len(flat_tags) - len(flat_genres)), 'constant')
+            elif len(flat_genres) > len(flat_tags):
+                flat_tags = np.pad(flat_tags, (0, len(flat_genres) - len(flat_tags)), 'constant')
+            else:
+                pass
+            
+            if len(flat_tags) > len(ratings):
+                ratings = np.pad(ratings, (0, len(flat_tags) - len(ratings)), 'constant')
+            elif len(ratings) > len(flat_tags):
+                flat_tags = np.pad(flat_tags, (0, len(ratings) - len(flat_tags)), 'constant')
+            else:
+                pass
+            
+            g_corr, _ = pearsonr(flat_tags, flat_genres)
+            r_corr, _ = pearsonr(flat_tags, ratings)
+            if pd.isna(r_corr):
+                r_corr = 0.0
+
+            g_corr_list.append(g_corr)
+            r_corr_list.append(r_corr) 
+        context['user'] = result['user_id'].unique().tolist()
+        context['tag-genre'] = g_corr_list
+        context['tag-rating'] = r_corr_list   
+        context['result'] = c_result
+        return context
 
 
     def print_first_10_tags(self):
