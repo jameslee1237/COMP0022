@@ -645,6 +645,7 @@ class App:
             else:
                 pass
             
+            
             g_corr, _ = pearsonr(flat_tags, flat_genres)
             r_corr, _ = pearsonr(flat_tags, ratings)
             if pd.isna(r_corr):
