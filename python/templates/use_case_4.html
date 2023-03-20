@@ -152,9 +152,18 @@
                 {% for row in result %}
                     <tr>
                         {% for j in range(0, len) %}
-                            <td>
-                                {{row[j]}}
-                            </td>
+                            {% if j == 2 %}
+                                {% set genre_list = row[j].split('|') %}
+                                <td class="genre-list">
+                                    {% for genre in genre_list %}
+                                        <span class="genre-tag">{{genre}}</span>
+                                    {% endfor %}
+                                </td>
+                            {% elif j == 0 %}
+                                <th scope="row">{{row[j]}}</th>
+                            {% else %}
+                                <td>{{row[j]}}</td>
+                            {% endif %}
                         {% endfor %}
                     </tr>
                 {% endfor %}
