@@ -676,14 +676,89 @@ class App:
         context['result'] = c_result
         return context
 
-
-    def print_first_10_tags(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
     
+    def predict_aggregate_ratings(self, ratings_data):
+        """
+        We use the least squares method for making predictions.
+        """
+
+        ratings_data = [(row[0], float(row[1])) for row in ratings_data]
+        ratings_data = np.array(ratings_data)
+
+        X = ratings_data[:, 0]      # user ids
+        y = ratings_data[:, 1]      # user ratings
+
+        # List to store predictions of aggregate ratings of different preview sizes
+        preview_size_labels = []
+        actual_aggregate_ratings = []
+        predicted_aggregate_ratings = []
+
+        for preview_size in range(3, 20):
+            preview_size_labels.append(preview_size)
+            # Choose a small subset of ratings as the preview audience
+            preview_indices = np.random.choice(len(X), size=preview_size, replace=False)
+            preview_ratings = y[preview_indices]
+
+            # Remove the preview audience from the training set
+            X_train = np.delete(X, preview_indices)
+            y_train = np.delete(y, preview_indices)
+
+            # Compute coefficients of linear regression model
+            A = np.vstack([X_train, np.ones(len(X_train))]).T
+            coeffs, _, _, _ = np.linalg.lstsq(A, y_train, rcond=None)
+
+            # Make predictions for overall rating
+            X_all = np.unique(X)
+            y_all_pred = np.dot(np.vstack([X_all, np.ones(len(X_all))]).T, coeffs)
+
+            actual_aggregate_ratings.append(np.mean(y))
+            predicted_aggregate_ratings.append(np.mean(y_all_pred))
+
+        return preview_size_labels, actual_aggregate_ratings, predicted_aggregate_ratings
+
+
+    # USE CASE 5 FUNCTIONS        
+    def use_case_5(self, filters):
+        cursor = self.cnx2.cursor()
+
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            return None
+        else:
+            base_query = ''
+            context = dict.fromkeys(['message', 'movie_title', 'actual_av', 'predicted_av'])
+
+            filters = filters.to_dict(flat=False)
+            # print(f"Filters: {filters}", flush=True)
+            
+            if 'movie_title' in filters.keys():
+                movie_title = filters['movie_title'][0]
+            
+                base_query = f"""
+                    SELECT user_ID, rating 
+                    FROM movies.movies_ratings
+                    WHERE movie_ID = (
+                        SELECT movie_ID
+                        FROM movies.movies_data
+                        WHERE title LIKE '%{movie_title}%'
+                    )
+                """
+
+                # print(f'USE CASE 5 FINAL QUERY: "{base_query}"', flush=True)
+
+                cursor.execute(base_query)
+                result = cursor.fetchall()
+                cursor.close()
+
+                preview_size_labels, actual_av_ratings, predicted_av_ratings = self.predict_aggregate_ratings(result)
+
+                context['preview_size_labels'] = preview_size_labels
+                context['actual_av'] = actual_av_ratings
+                context['predicted_av'] = predicted_av_ratings
+                context['movie_title'] = movie_title
+                context['message'] = f'Completed ratings prediction for {movie_title}'
+                return context
+            return None
+
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
@@ -835,9 +910,8 @@ def uc4():
     l = len(heading)
     return render_template("use_case_4.html", result=item['result'], heading=heading, len=l, all_data=item['all_data'])
 
-
-@app.route("/view_links")
-def get_links():
+@app.route("/render_use_case_5", methods=["GET", "POST"])
+def uc_5():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -851,35 +925,18 @@ def get_links():
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_links.html", data=app1.print_first_10_links())
-
-@app.route("/view_tags")
-def get_tags():
-    app1 = App()
-    app1.set_config()
-    app1.get_csv_data()
-    try:
-        app1.connect_with_root()
-    except Error as e:
         print("Error while connecting: ", e)
-    if app1.rconnected != False:
-        app1.grant_prev()
-        app1.close_connec_root()
-    try:
-        app1.connect_newuser("movies")
-    except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_tags.html", data=app1.print_first_10_tags())
-
+    
+    if request.method == "POST":
+        context = app1.use_case_5(filters=request.form)
+    else:
+        context = app1.use_case_5(filters=None)
+    
+    return render_template(
+        'use_case_5.html',
+        context=context,
+    )
+    
 
 if __name__ == "__main__":
     app.run(debug=True)
