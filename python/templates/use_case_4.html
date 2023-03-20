@@ -27,6 +27,7 @@
 
             var ctx = document.getElementById("myChart").getContext("2d");
             var ctx2 = document.getElementById("myChart2").getContext("2d");
+            
             var myChart = new Chart(ctx, {
                 type: "scatter",
                 data: {
@@ -37,27 +38,29 @@
                     }]
                 },
                 options : {
-                    title: {
-                        display: true,
-                        text: 'Correlation scatter plot'
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Correlation scatter plot'
+                        },
                     },
                     scales: {
-                        xAxes: [{
+                        x: {
                             type: 'linear',
                             position: 'bottom',
-                            scaleLabel: {
+                            title: {
                                 display: true,
-                                labelString: 'User_id'
+                                text: 'User_id'
                             }
-                        }],
-                        yAxes: [{
+                        },
+                        y: {
                             type: 'linear',
                             position: 'left',
-                            scaleLabel: {
+                            title: {
                                 display: true,
-                                labelString: 'Correlation'
+                                text: 'Correlation'
                             }
-                        }]
+                        }
                     },
                     tooltips: {
                         callbacks: {
@@ -78,27 +81,29 @@
                     }]
                 },
                 options : {
-                    title: {
-                        display: true,
-                        text: 'Correlation scatter plot'
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Correlation scatter plot'
+                        },
                     },
                     scales: {
-                        xAxes: [{
+                        x: {
                             type: 'linear',
                             position: 'bottom',
-                            scaleLabel: {
+                            title: {
                                 display: true,
-                                labelString: 'User_id'
+                                text: 'User_id'
                             }
-                        }],
-                        yAxes: [{
+                        },
+                        y: {
                             type: 'linear',
                             position: 'left',
-                            scaleLabel: {
+                            title: {
                                 display: true,
-                                labelString: 'Correlation'
+                                text: 'Correlation'
                             }
-                        }]
+                        }
                     },
                     tooltips: {
                         callbacks: {
