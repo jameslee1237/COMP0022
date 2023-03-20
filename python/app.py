@@ -841,7 +841,7 @@ class App:
 
     # USE CASE 6 FUNCTIONS
     def use_case_6(self):
-
+        cursor = self.cnx2.cursor()
         base_query = 'SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating1, p.predicted_rating2, p.predicted_rating3, \
              p.predicted_rating4, p.predicted_rating5, p.predicted_rating6, p.predicted_rating7, p.predicted_rating8, p.predicted_rating9, p.predicted_rating10, p.predicted_rating11, \
                  p.predicted_rating12 FROM movies.personality AS p'
@@ -854,9 +854,9 @@ class App:
     def use_case_6_part2(self):
         result = []
         cursor = self.cnx2.cursor()
-        base_query = ["SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
-                      ", ratings_case6.rating, ratings_case6.tstamp, movies_data.genre FROM personality p JOIN ratings_case6 ON p.userid = ratings_case6.user_ID AND ",
-                      " = ratings_case6.movie_ID JOIN movies_data ON ", " = movies_data.movie_Id;"]
+        base_query = ["SELECT p.userid, p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
+                      ", ratings_case6.rating, ratings_case6.tstamp, movies_data.genre, p.enjoy_watching FROM personality p JOIN ratings_case6 ON p.userid = ratings_case6.user_ID AND ",
+                      " = ratings_case6.movie_ID JOIN movies_data ON ", " = movies_data.movie_Id"]
         repeat = ["p.movie1", "p.movie2", "p.movie3", "p.movie4", "p.movie5", "p.movie6", "p.movie7", "p.movie8", "p.movie9", "p.movie10", 
                   "p.movie11", "p.movie12"]
         pre = ["p.predicted_rating1", "p.predicted_rating2", "p.predicted_rating3", "p.predicted_rating4", "p.predicted_rating5", "p.predicted_rating6",
@@ -872,8 +872,19 @@ class App:
         # WHERE p.userid = "8e7cebf9a234c064b75016249f2ac65e";
             cursor.execute(query)
             result.append(cursor.fetchall())
-        
-        print(result, flush=True)
+        cursor.execute("SELECT DISTINCT userid FROM personality;")
+        users = cursor.fetchall()
+        users = [x[0] for x in users]
+        temp = []
+        for x in result:
+            temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
+        df = pd.concat(temp)
+        for user in users:
+            if df[df['userid'] == user].empty:
+                pass
+            else:
+                print(df[df['userid'] == user], flush=True)
+                break
         return result
 
     def print_first_10_links(self):
@@ -1070,9 +1081,10 @@ def uc_6():
         app1.connect_newuser("movies")
     except Error as e:
         print("Error while connecting: ", e)
-    temp = app1.use_case_6()
+    result = app1.use_case_6()
+    temp = app1.use_case_6_part2()
     return render_template(
-        'use_case_6.html', result = temp
+        'use_case_6.html', result = result, temp = temp
     )
 
 if __name__ == "__main__":
