@@ -832,12 +832,23 @@ class App:
 
     # USE CASE 6 FUNCTIONS
     def use_case_6(self):
+        result = []
         cursor = self.cnx2.cursor()
-        cursor.execute("""SELECT personality.*, ratings_case6.rating, ratings_case6.tstamp 
-                          FROM personality 
-                          JOIN ratings_case6 ON personality.userid = ratings_case6.user_ID AND personality.movie2 = ratings_case6.movie_ID
-                          WHERE personality.userid = "8e7cebf9a234c064b75016249f2ac65e";""")
-        result = cursor.fetchall()
+        base_query = ["SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
+                      ", ratings_case6.rating, ratings_case6.tstamp FROM personality p JOIN ratings_case6 ON p.userid = ratings_Case6.user_ID AND ",
+                      " = ratings_case6.movie_ID", "WHERE personality.userid = '8e7cebf9a234c064b75016249f2ac65e';"]
+        repeat = ["p.movie1", "p.movie2", "p.movie3", "p.movie4", "p.movie5", "p.movie6", "p.movie7", "p.movie8", "p.movie9", "p.movie10", 
+                  "p.movie11", "p.movie12"]
+        pre = ["p.predicted_rating1", "p.predicted_rating2", "p.predicted_rating3", "p.predicted_rating4", "p.predicted_rating5", "p.predicted_rating6",
+                "p.predicted_rating7", "p.predicted_rating8", "p.predicted_rating9", "p.predicted_rating10", "p.predicted_rating11", "p.predicted_rating12"]
+        for x in range(len(repeat)):
+            query = base_query[0] + pre[x] + base_query[1] + repeat[x] + base_query[2]
+        #cursor.execute("""SELECT personality.*, ratings_case6.rating, ratings_case6.tstamp 
+        #                  FROM personality 
+        #                  JOIN ratings_case6 ON personality.userid = ratings_case6.user_ID AND personality.movie2 = ratings_case6.movie_ID
+        #                  WHERE personality.userid = "8e7cebf9a234c064b75016249f2ac65e";""")
+            cursor.execute(query)
+            result.append(cursor.fetchall())
         print(result, flush=True)
         return result
 
