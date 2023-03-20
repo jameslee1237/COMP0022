@@ -837,11 +837,11 @@ class App:
         ratings_cols = query_results[:, 5:]
 
         correlations = np.corrcoef(traits_cols.T, ratings_cols.T)
-        return correlations
+        return correlations[:5, 5:]
 
     # USE CASE 6 FUNCTIONS
     def use_case_6(self):
-
+        cursor = self.cnx2.cursor()
         base_query = 'SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating1, p.predicted_rating2, p.predicted_rating3, \
              p.predicted_rating4, p.predicted_rating5, p.predicted_rating6, p.predicted_rating7, p.predicted_rating8, p.predicted_rating9, p.predicted_rating10, p.predicted_rating11, \
                  p.predicted_rating12 FROM movies.personality AS p'
@@ -849,7 +849,13 @@ class App:
         cursor.execute(base_query)
         result = cursor.fetchall()
         correlation_result = self.personality_rating_correlation(query_results=result)
-        return correlation_result
+        
+        # Return a context object for rendering in the template
+        context = {
+            'correlation_result': correlation_result,
+            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion']
+        }
+        return context
 
     def use_case_6_part2(self):
         result = []
@@ -1072,7 +1078,7 @@ def uc_6():
         print("Error while connecting: ", e)
     temp = app1.use_case_6()
     return render_template(
-        'use_case_6.html', result = temp
+        'use_case_6.html', context=temp
     )
 
 if __name__ == "__main__":
