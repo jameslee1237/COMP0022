@@ -584,12 +584,12 @@ class App:
                           GROUP_CONCAT(DISTINCT md.rating) as rating
                           FROM movies_tags mt
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
-                          GROUP BY mt.user_ID, mt.movie_ID;""")
+                          GROUP BY mt.user_ID, mt.movie_ID LIMIT 20;""")
         result = cursor.fetchall()
         cursor.execute("""SELECT mt.tag, GROUP_CONCAT(movies_data.title) as title, GROUP_CONCAT(movies_data.genre) as genre
                           FROM movies_tags mt
                           INNER JOIN movies_data ON mt.movie_Id = movies_data.movie_Id
-                          GROUP BY mt.tag;""")
+                          GROUP BY mt.tag LIMIT 20;""")
         c_result = cursor.fetchall()
         idx = ["user_id", "movie_id", "tags", "genres", "rating"]
         result = pd.DataFrame(result, columns=idx)

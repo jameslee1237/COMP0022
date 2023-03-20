@@ -51,7 +51,7 @@
                             position: 'bottom',
                             title: {
                                 display: true,
-                                text: 'User_id'
+                                text: 'User ID'
                             }
                         },
                         y: {
@@ -63,14 +63,13 @@
                             }
                         }
                     },
-                    tooltips: {
-                        callbacks: {
-                            label: function(tooltipItem, data){
-                                let label = "User_id: "
-                                label += rlabels[tooltipItem.index]['x']
-                                label += ", Correlation: "
-                                label += rlabels[tooltipItem.index]['y']
-                                return label
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem, data){
+                                    let label = "User ID: " + rdata[tooltipItem.dataIndex]['x'] + ", Correlation Value: " + rdata[tooltipItem.dataIndex]['y'];
+                                    return label;
+                                }
                             }
                         }
                     }
@@ -98,7 +97,7 @@
                             position: 'bottom',
                             title: {
                                 display: true,
-                                text: 'User_id'
+                                text: 'User ID'
                             }
                         },
                         y: {
@@ -110,10 +109,13 @@
                             }
                         }
                     },
-                    tooltips: {
-                        callbacks: {
-                            label: function(tooltipItem, data){
-                                return glabels[tooltipItem.index]
+                    plugins:{
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem, data){
+                                    let label = "User ID: " + rdata[tooltipItem.dataIndex]['x'] + ", Correlation Value: " + rdata[tooltipItem.dataIndex]['y'];
+                                    return label;
+                                }
                             }
                         }
                     }
@@ -178,7 +180,7 @@
         <!-- Bootstrap -->
         <script src="{{ url_for('static', filename='bootstrap.min.js') }}" type="text/javascript"></script>
 
-        <!-- DATA TABES SCRIPT -->
+        <!-- DATA TABLES SCRIPT -->
         <script src="{{ url_for('static', filename='jquery.dataTables.js') }}" type="text/javascript"></script>
         <script src="{{ url_for('static', filename='dataTables.bootstrap.js') }}" type="text/javascript"></script>
         <script type="text/javascript">
