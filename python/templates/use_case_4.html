@@ -4,6 +4,7 @@
 
 {% block css_links %}
     <link rel="stylesheet" href="{{ url_for('static', filename='use_case_3.css') }}">
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
 {% endblock  %}
 
 {% block block_menu %}{% endblock  %}
@@ -139,8 +140,8 @@
                            there were quite a lot of same tags given to different movies</p>
                            
     </div>
-    <div class="use-case-2-results">
-        <table class="table use-case-2-results-table">
+    <div class="use-case-4-results">
+        <table id="table use-case-4-results-table", class="table table-bordered table-striped">
             <thead class="table-dark">
                 <tr>
                     {% for i in range(0, len) %}
@@ -168,4 +169,21 @@
                     </tr>
                 {% endfor %}
             </tbody>
+        </table>
+    
+        <!-- Bootstrap -->
+        <script src="{{ url_for('static', filename='bootstrap.min.js') }}" type="text/javascript"></script>
+
+        <!-- DATA TABES SCRIPT -->
+        <script src="{{ url_for('static', filename='jquery.dataTables.js') }}" type="text/javascript"></script>
+        <script src="{{ url_for('static', filename='dataTables.bootstrap.js') }}" type="text/javascript"></script>
+        <script type="text/javascript">
+            $(function() {
+                $("#use-case-4-results").dataTable({
+                    "iDisplayLength": 20,
+                    "aLengthMenu": [[10, 25, 50, 100,  -1], [10, 25, 50, 100, "All"]]
+                });
+            });
+        </script>
+    </div>
 {% endblock %}
