@@ -837,7 +837,7 @@ class App:
         ratings_cols = query_results[:, 5:]
 
         correlations = np.corrcoef(traits_cols.T, ratings_cols.T)
-        return correlations
+        return correlations[:5, 5:]
 
     # USE CASE 6 FUNCTIONS
     def use_case_6(self):
@@ -849,7 +849,13 @@ class App:
         cursor.execute(base_query)
         result = cursor.fetchall()
         correlation_result = self.personality_rating_correlation(query_results=result)
-        return correlation_result
+        
+        # Return a context object for rendering in the template
+        context = {
+            'correlation_result': correlation_result,
+            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion']
+        }
+        return context
 
     def use_case_6_part2(self):
         result = []
@@ -879,12 +885,15 @@ class App:
         for x in result:
             temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
         df = pd.concat(temp)
-        for user in users:
-            if df[df['userid'] == user].empty:
-                pass
-            else:
-                print(df[df['userid'] == user], flush=True)
-                break
+        LE = LabelEncoder()
+        unique_genre = self.get_unique_genres()
+        LE.fit(unique_genre)
+        traits = np.array(df[["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]])
+        en_gen = df[['enjoy_watching', 'genre']]
+        en_gen['genre'] = en_gen['genre'].apply(lambda x: x.split("|"))
+        en_gen['genre'] = en_gen['genre'].apply(lambda x: [LE.transform([i]) for i in x])
+        en_gen = np.array(en_gen)
+        data = [en_gen, traits]
         return result
 
     def print_first_10_links(self):
@@ -1084,7 +1093,7 @@ def uc_6():
     result = app1.use_case_6()
     temp = app1.use_case_6_part2()
     return render_template(
-        'use_case_6.html', result = result, temp = temp
+        'use_case_6.html', context = result, temp = temp
     )
 
 if __name__ == "__main__":

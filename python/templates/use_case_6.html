@@ -17,15 +17,20 @@
     <div>
         <p>Correlation between the 5 personality traits and the ratings for each movie</p>
         <table class="table use-case-6-1-table">
+            {% set personality_traits = context['personality_traits'] %}
+            {% set correlation_result = context['correlation_result'] %}
+            <thead>
+                <th>Personality Trait/Movie No.</th>
+                {% for i in range(0, 12) %}
+                    <th scope="col">{{i+1}}</th>
+                {% endfor %}
+            </thead>
             <tbody>
-                {% for row in result %}
+                {% for j in range(personality_traits|length) %}
                     <tr>
-                        {% for j in range(0, 12) %}
-                            {% set val = '%0.2f' | format(row[j]|float) %}
-                            {% set rval = val|float * 255 %}
-                            <td style="background-color: rgb(0, 191, {{rval}})">
-                                {{ val }}
-                            </td>
+                        <td>{{ personality_traits[j] }}</td>
+                        {% for k in correlation_result[j] %}
+                            <td>{{ '%.2f'|format(k) }}</td>
                         {% endfor %}
                     </tr>
                 {% endfor %}
