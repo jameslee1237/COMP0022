@@ -111,7 +111,28 @@
             });
         </script>
     </div>
-
+    <div class="use-case-3-results">
+        <p class="message">The first scatterplot shows correlation between tags and ratings for specific user.  <br>
+                           The second scatterplot shows correlation between tags and genres for specific user. <br>
+                           The correlation used was a pearson correlation, where the tags and genre were encoded with unique labels,<br>
+                           where tags and genre are lists of tags user gave and the genre of corresponding movies. <br>
+                           Both lists were pre-processed to ensure that the length of each list is equal and greater than 2, <br>
+                           by padding the list with 0s as this does not affect the result of correlation. <br>
+                           <br>
+                           Looking at each of the scatterplot, both the scatterplot show majority of users showing weak correlation between<br>
+                           tags given by user and rating or genre, implying being given a specific tag, does not necessarily result in <br>
+                           certain rating or genre. This can be clearly seen looking at correlation of user who has given large number of tags considering
+                           the fact that reliability of pearson correlation is affected by sample size, where large sample size results in more accurate results.<br>
+                           For instance, User with id 62, has given more than 300 tags, and user with id 357, has given more than 50 tags, but<br>
+                           both users show correlation between 0 ~ -0.2 for tags and ratings, and 0 ~ 0.1 for tags and genres, whereas those with<br>
+                           very high correlation tend to have only given very small number of tags, resulting in small sample size. <br>
+                           <br>
+                           Looking at the table with movie data segmented by tags, it can be seen that when the content of tags describe <br>
+                           about content of the movie, then same tags were given to different movies with similar contents. Also in cases where<br>
+                           the tags were related specific crew or cast of a movie, the same tag was given to different movies with same member of crew of cast.<br>
+                           Lastly, when the tags were related to release date, different movies were given same tags. As the three cases are quite common among movies,<br>
+                           there were quite a lot of same tags given to different movies</p>
+    </div>
     <div class="use-case-2-results">
         <table class="table use-case-2-results-table">
             <thead class="table-dark">
