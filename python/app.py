@@ -835,20 +835,24 @@ class App:
         result = []
         cursor = self.cnx2.cursor()
         base_query = ["SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
-                      ", ratings_case6.rating, ratings_case6.tstamp FROM personality p JOIN ratings_case6 ON p.userid = ratings_Case6.user_ID AND ",
-                      " = ratings_case6.movie_ID", "WHERE personality.userid = '8e7cebf9a234c064b75016249f2ac65e';"]
+                      ", ratings_case6.rating, ratings_case6.tstamp, movies_data.genre FROM personality p JOIN ratings_case6 ON p.userid = ratings_case6.user_ID AND ",
+                      " = ratings_case6.movie_ID JOIN movies_data ON ", " = movies_data.movie_Id;"]
         repeat = ["p.movie1", "p.movie2", "p.movie3", "p.movie4", "p.movie5", "p.movie6", "p.movie7", "p.movie8", "p.movie9", "p.movie10", 
                   "p.movie11", "p.movie12"]
         pre = ["p.predicted_rating1", "p.predicted_rating2", "p.predicted_rating3", "p.predicted_rating4", "p.predicted_rating5", "p.predicted_rating6",
                 "p.predicted_rating7", "p.predicted_rating8", "p.predicted_rating9", "p.predicted_rating10", "p.predicted_rating11", "p.predicted_rating12"]
+        user = ["8e7cebf9a234c064b75016249f2ac65e", "77c7d756a093150d4377720abeaeef76", "b7e8a92987a530cc368719a0e60e26a3", "92561f21446e017dd6b68b94b23ad5b7",
+                "030001ac2145a938b07e686a35a2d638", "f91b2fb085d0feb47b86fc81b10207ee", "f7b0502be8c86203ce6acaffe59f993a", "36f31ef9879b4de96977aeba94878581",
+                "653bb2f69ddd19e1cf1f9e1871916d71", "89d365a0d0f1a80ae8d079079a078155", "4d92401ed253aab37fa28a68d5d24d87", "875afaef12d7872b644948db1bb3040a"]
         for x in range(len(repeat)):
-            query = base_query[0] + pre[x] + base_query[1] + repeat[x] + base_query[2]
-        #cursor.execute("""SELECT personality.*, ratings_case6.rating, ratings_case6.tstamp 
-        #                  FROM personality 
-        #                  JOIN ratings_case6 ON personality.userid = ratings_case6.user_ID AND personality.movie2 = ratings_case6.movie_ID
-        #                  WHERE personality.userid = "8e7cebf9a234c064b75016249f2ac65e";""")
+            query = base_query[0] + pre[x] + base_query[1] + repeat[x] + base_query[2] + repeat[x] + base_query[3]
+        #cursor.execute(SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating2, 
+        # ratings_case6.rating, ratings_case6.tstamp, movies_data.genre FROM personality p JOIN ratings_case6 ON p.userid = 
+        # ratings_case6.user_ID AND p.movie2 = ratings_case6.movie_ID JOIN movies_data ON p.movie2 = movies_data.movie_Id 
+        # WHERE p.userid = "8e7cebf9a234c064b75016249f2ac65e";
             cursor.execute(query)
             result.append(cursor.fetchall())
+        
         print(result, flush=True)
         return result
 
