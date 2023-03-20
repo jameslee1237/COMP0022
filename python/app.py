@@ -830,8 +830,28 @@ class App:
                 return context
             return None
 
+    def personality_rating_correlation(self, query_results):
+        # Cast to numpy array
+        query_results = np.array(query_results)
+        traits_cols = query_results[:, :5]
+        ratings_cols = query_results[:, 5:]
+
+        correlations = np.corrcoef(traits_cols.T, ratings_cols.T)
+        return correlations
+
     # USE CASE 6 FUNCTIONS
     def use_case_6(self):
+
+        base_query = 'SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating1, p.predicted_rating2, p.predicted_rating3, \
+             p.predicted_rating4, p.predicted_rating5, p.predicted_rating6, p.predicted_rating7, p.predicted_rating8, p.predicted_rating9, p.predicted_rating10, p.predicted_rating11, \
+                 p.predicted_rating12 FROM movies.personality AS p'
+        
+        cursor.execute(base_query)
+        result = cursor.fetchall()
+        correlation_result = self.personality_rating_correlation(query_results=result)
+        return correlation_result
+
+    def use_case_6_part2(self):
         result = []
         cursor = self.cnx2.cursor()
         base_query = ["SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
@@ -855,7 +875,6 @@ class App:
         
         print(result, flush=True)
         return result
-
 
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
