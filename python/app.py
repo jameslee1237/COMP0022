@@ -830,6 +830,18 @@ class App:
                 return context
             return None
 
+    # USE CASE 6 FUNCTIONS
+    def use_case_6(self):
+        cursor = self.cnx2.cursor()
+        cursor.execute("""SELECT personality.*, ratings_case6.rating, ratings_case6.tstamp 
+                          FROM personality 
+                          JOIN ratings_case6 ON personality.userid = ratings_case6.user_ID AND personality.movie2 = ratings_case6.movie_ID
+                          WHERE personality.userid = "8e7cebf9a234c064b75016249f2ac65e";""")
+        result = cursor.fetchall()
+        print(result, flush=True)
+        return result
+
+
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
@@ -1007,7 +1019,27 @@ def uc_5():
         'use_case_5.html',
         context=context,
     )
-    
+
+@app.route("/render_use_case_6", methods=["GET", "POST"])
+def uc_6():
+    app1 = App()
+    app1.set_config()
+    app1.get_csv_data()
+    try:
+        app1.connect_with_root()
+    except Error as e:
+        print("Error while connecting: ", e)
+    if app1.rconnected != False:
+        app1.grant_prev()
+        app1.close_connec_root()
+    try:
+        app1.connect_newuser("movies")
+    except Error as e:
+        print("Error while connecting: ", e)
+    temp = app1.use_case_6()
+    return render_template(
+        'use_case_6.html', result = temp
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
