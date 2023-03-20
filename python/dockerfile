@@ -12,7 +12,7 @@ ENV FLASK_RUN_HOST 0.0.0.0
 
 EXPOSE 8000
 
-COPY movies.csv links.csv ratings.csv tags.csv RTmovies.csv ./
+COPY movies.csv links.csv ratings.csv tags.csv RTmovies.csv personality-data.csv ratings_case6.csv ./
 
 COPY app.py ./
 

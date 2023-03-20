@@ -53,6 +53,16 @@ class App:
         self.tags_data.fillna(0,inplace=True)
         self.tags_data.head()
 
+        self.personality = pd.read_csv(r"./personality-data.csv", index_col=False, delimiter=',')
+        self.personality.drop_duplicates(subset=None, inplace=True)
+        self.personality.fillna(0,inplace=True)
+        self.personality.head()
+
+        self.ratings_case6 = pd.read_csv(r"./ratings_case6.csv", index_col=False, delimiter=',')
+        self.ratings_case6.drop_duplicates(subset=None, inplace=True)
+        self.ratings_case6.fillna(0,inplace=True)
+        self.ratings_case6.head()
+
     def connect_with_root(self):
         db_host = self.config.get('host')
         db_port = self.config.get('port')
@@ -104,7 +114,8 @@ class App:
             cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
             cursor.execute("DROP TABLE IF EXISTS movies_links;")
             cursor.execute("DROP TABLE IF EXISTS movies_tags;")
-          
+            cursor.execute("DROP TABLE IF EXISTS personality;")
+            cursor.execute("DROP TABLE IF EXISTS ratings_case6;")
 
             self.TABLES['movies_data'] = (
                 "CREATE TABLE movies_data ("
@@ -141,6 +152,52 @@ class App:
                 "  tag VARCHAR(255) NOT NULL,"
                 "  timestamp VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(user_ID, movie_ID, tag));"
+            )
+            self.TABLES['personality'] = (
+                "CREATE TABLE personality ("
+                "  userid VARCHAR(255) NOT NULL,"
+                "  openness FLOAT NOT NULL,"
+                "  agreeableness FLOAT NOT NULL,"
+                "  emotional_stability FLOAT NOT NULL,"
+                "  conscientiousness FLOAT NOT NULL,"
+                "  extraversion FLOAT NOT NULL,"
+                "  assigned_metric VARCHAR(255) NOT NULL,"
+                "  assigned_condition VARCHAR(255) NOT NULL,"
+                "  movie1 INT NOT NULL,"
+                "  predicted_rating1 FLOAT NOT NULL,"
+                "  movie2 INT NOT NULL,"
+                "  predicted_rating2 FLOAT NOT NULL,"
+                "  movie3 INT NOT NULL,"
+                "  predicted_rating3 FLOAT NOT NULL,"
+                "  movie4 INT NOT NULL,"
+                "  predicted_rating4 FLOAT NOT NULL,"
+                "  movie5 INT NOT NULL,"
+                "  predicted_rating5 FLOAT NOT NULL,"
+                "  movie6 INT NOT NULL,"
+                "  predicted_rating6 FLOAT NOT NULL,"
+                "  movie7 INT NOT NULL,"
+                "  predicted_rating7 FLOAT NOT NULL,"
+                "  movie8 INT NOT NULL,"
+                "  predicted_rating8 FLOAT NOT NULL,"
+                "  movie9 INT NOT NULL,"
+                "  predicted_rating9 FLOAT NOT NULL,"
+                "  movie10 INT NOT NULL,"
+                "  predicted_rating10 FLOAT NOT NULL,"
+                "  movie11 INT NOT NULL,"
+                "  predicted_rating11 FLOAT NOT NULL,"
+                "  movie12 INT NOT NULL,"
+                "  predicted_rating12 FLOAT NOT NULL,"
+                "  is_personalized INT NOT NULL,"
+                "  enjoy_watching INT NOT NULL,"
+                "  PRIMARY KEY(userid, assigned_metric, assigned_condition));"
+            )
+            self.TABLES['ratings_case6'] = (
+                "  CREATE TABLE ratings_case6 ("
+                "  user_ID VARCHAR(255) NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  rating FLOAT NOT NULL,"
+                "  tstamp timestamp NOT NULL,"
+                "  PRIMARY KEY(user_ID, movie_ID, tstamp));"
             )
 
             for table_name in self.TABLES:
@@ -193,8 +250,21 @@ class App:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-            cursor.execute("COMMIT;")
 
+            for i, row in self.personality.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = """INSERT INTO movies.personality VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                cursor.execute(sql, tuple(row))
+            
+            for i, row in self.ratings_case6.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.ratings_case6 VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+
+            cursor.execute("COMMIT;")
             cursor.close()
 
     def get_movie_info(self):
