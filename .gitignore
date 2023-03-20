@@ -1,1 +1,3 @@
 db_volume
+python/static/.DS_Store
+python/templates/table_split.html
