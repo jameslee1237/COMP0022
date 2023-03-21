@@ -4,7 +4,6 @@
 
 {% block css_links %}
     <link rel="stylesheet" href="{{ url_for('static', filename='use_case_3.css') }}">
-    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
 {% endblock  %}
 
 {% block block_menu %}{% endblock  %}
@@ -176,20 +175,51 @@
                 {% endfor %}
             </tbody>
         </table>
-    
-        <!-- Bootstrap -->
-        <script src="{{ url_for('static', filename='bootstrap.min.js') }}" type="text/javascript"></script>
-
-        <!-- DATA TABLES SCRIPT -->
-        <script src="{{ url_for('static', filename='jquery.dataTables.js') }}" type="text/javascript"></script>
-        <script src="{{ url_for('static', filename='dataTables.bootstrap.js') }}" type="text/javascript"></script>
-        <script type="text/javascript">
-            $(function() {
-                $("#use-case-4-results").dataTable({
-                    "iDisplayLength": 25,
-                    "aLengthMenu": [[10, 25, 50, 100,  -1], [10, 25, 50, 100, "All"]]
-                });
-            });
-        </script>
     </div>
+
+    <label>Page:</label>
+    <p id="current_page"></p>
+
+    <script>
+    document.getElementById("current_page").innerHTML = page_number;
+    </script>
+
+    <script>
+        function get_new_page_number(form){
+            var number = document.getElementById("new_page").value;
+            if(number>0){
+                form.action = number;
+            }
+        }
+    </script>
+
+    <script>
+        function next_page(form){
+            var number = page_number+1;
+            form.action = number;
+        }
+    </script>
+
+    <script>
+        function previous_page(form){
+            if(page_number==1){
+                return false
+            }
+            var number = page_number-1;
+            form.action = number;
+        }
+    </script>
+
+    <form onsubmit = "return previous_page(this)">
+        <button type="submit">Previous Page</button>
+    </form>
+
+    <form onsubmit = "return get_new_page_number(this)">
+        <input type="text" id="new_page" size="3"> <button type="submit">Go</button>
+    </form>
+
+    <form onsubmit = "return next_page(this)">
+        <button type="submit">Next Page</button>
+    </form>
+
 {% endblock %}
