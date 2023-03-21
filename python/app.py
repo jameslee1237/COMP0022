@@ -214,6 +214,7 @@ class App:
                 else:
                     print("OK", flush=True)
             
+            
             #format pdata
             if len(self.pdata.columns.tolist()) < 9:
                 self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
@@ -886,32 +887,21 @@ class App:
         for x in result:
             temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
         df = pd.concat(temp)
-
         unique_genre = self.get_unique_genres()
-        traits = np.array(df[["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]])
-        en_gen = df[['enjoy_watching', 'genre']]
-        t = []
-
-        for genre in unique_genre:
-            en_gen_g = en_gen[en_gen['genre'].str.contains(genre, regex=False)]
-            en_gen_g_avg = en_gen_g['enjoy_watching'].sum() / len(en_gen_g['enjoy_watching'])
-            if pd.isna(en_gen_g_avg):
-                en_gen_g_avg = 0
-            t.append([genre, en_gen_g_avg])
-        t = np.array(t)
+        for x in df['userid']:
+            corr, _ = pearsonr(df[df['userid']==x][["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]], df[df['userid']==x][["enjoy_watching", "g"]])
+        
         
         t = t[:, 1]
         t = t.astype(np.float64)
-        t = np.tile(t, (3015, 1))
         traits = traits.astype(np.float64)
-        correlation = np.corrcoef(traits.T, t.T)
-        # correlation = correlation[:5, 5:]
-        print(correlation, flush=True)
+        print(t, traits[:20], flush=True)
         context = {
-            'correlation_result2': correlation,
-            'genres': unique_genre
+            'correlation_result': correlation,
+            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion'],
+            'genre': unique_genre
         }
-        return context
+        return result
 
 
     def print_first_10_links(self):
@@ -1109,12 +1099,9 @@ def uc_6():
     except Error as e:
         print("Error while connecting: ", e)
     result = app1.use_case_6()
-    result_part2 = app1.use_case_6_part2()
-
-    # Combine context dictionaries from each subcase
-    context = result | result_part2
+    temp = app1.use_case_6_part2()
     return render_template(
-        'use_case_6.html', context=context
+        'use_case_6.html', context = result, temp = temp
     )
 
 if __name__ == "__main__":
