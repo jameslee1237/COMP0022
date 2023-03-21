@@ -343,6 +343,7 @@ class App:
             self.cnx2.commit()
         cursor.close()
 
+
     def fill_tags(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT tags FROM movies_info WHERE movie_ID = 1;")
