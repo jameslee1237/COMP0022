@@ -2,6 +2,7 @@ import mysql.connector
 import pandas as pd
 import numpy as np
 import itertools
+import math
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
@@ -52,6 +53,16 @@ class App:
         self.tags_data = pd.read_csv(r"./tags.csv", index_col=False, delimiter=',')
         self.tags_data.fillna(0,inplace=True)
         self.tags_data.head()
+
+        self.personality = pd.read_csv(r"./personality-data.csv", index_col=False, delimiter=',')
+        self.personality.drop_duplicates(subset=None, inplace=True)
+        self.personality.fillna(0,inplace=True)
+        self.personality.head()
+
+        self.ratings_case6 = pd.read_csv(r"./ratings_case6.csv", index_col=False, delimiter=',')
+        self.ratings_case6.drop_duplicates(subset=None, inplace=True)
+        self.ratings_case6.fillna(0,inplace=True)
+        self.ratings_case6.head()
 
     def connect_with_root(self):
         db_host = self.config.get('host')
@@ -104,7 +115,8 @@ class App:
             cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
             cursor.execute("DROP TABLE IF EXISTS movies_links;")
             cursor.execute("DROP TABLE IF EXISTS movies_tags;")
-          
+            cursor.execute("DROP TABLE IF EXISTS personality;")
+            cursor.execute("DROP TABLE IF EXISTS ratings_case6;")
 
             self.TABLES['movies_data'] = (
                 "CREATE TABLE movies_data ("
@@ -142,6 +154,52 @@ class App:
                 "  timestamp VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(user_ID, movie_ID, tag));"
             )
+            self.TABLES['personality'] = (
+                "CREATE TABLE personality ("
+                "  userid VARCHAR(255) NOT NULL,"
+                "  openness FLOAT NOT NULL,"
+                "  agreeableness FLOAT NOT NULL,"
+                "  emotional_stability FLOAT NOT NULL,"
+                "  conscientiousness FLOAT NOT NULL,"
+                "  extraversion FLOAT NOT NULL,"
+                "  assigned_metric VARCHAR(255) NOT NULL,"
+                "  assigned_condition VARCHAR(255) NOT NULL,"
+                "  movie1 INT NOT NULL,"
+                "  predicted_rating1 FLOAT NOT NULL,"
+                "  movie2 INT NOT NULL,"
+                "  predicted_rating2 FLOAT NOT NULL,"
+                "  movie3 INT NOT NULL,"
+                "  predicted_rating3 FLOAT NOT NULL,"
+                "  movie4 INT NOT NULL,"
+                "  predicted_rating4 FLOAT NOT NULL,"
+                "  movie5 INT NOT NULL,"
+                "  predicted_rating5 FLOAT NOT NULL,"
+                "  movie6 INT NOT NULL,"
+                "  predicted_rating6 FLOAT NOT NULL,"
+                "  movie7 INT NOT NULL,"
+                "  predicted_rating7 FLOAT NOT NULL,"
+                "  movie8 INT NOT NULL,"
+                "  predicted_rating8 FLOAT NOT NULL,"
+                "  movie9 INT NOT NULL,"
+                "  predicted_rating9 FLOAT NOT NULL,"
+                "  movie10 INT NOT NULL,"
+                "  predicted_rating10 FLOAT NOT NULL,"
+                "  movie11 INT NOT NULL,"
+                "  predicted_rating11 FLOAT NOT NULL,"
+                "  movie12 INT NOT NULL,"
+                "  predicted_rating12 FLOAT NOT NULL,"
+                "  is_personalized INT NOT NULL,"
+                "  enjoy_watching INT NOT NULL,"
+                "  PRIMARY KEY(userid, assigned_metric, assigned_condition));"
+            )
+            self.TABLES['ratings_case6'] = (
+                "  CREATE TABLE ratings_case6 ("
+                "  user_ID VARCHAR(255) NOT NULL,"
+                "  movie_ID INT NOT NULL,"
+                "  rating FLOAT NOT NULL,"
+                "  tstamp timestamp NOT NULL,"
+                "  PRIMARY KEY(user_ID, movie_ID, tstamp));"
+            )
 
             for table_name in self.TABLES:
                 table_description = self.TABLES[table_name]
@@ -156,6 +214,7 @@ class App:
                 else:
                     print("OK", flush=True)
             
+
             #format pdata
             if len(self.pdata.columns.tolist()) < 9:
                 self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
@@ -193,8 +252,21 @@ class App:
                     print("INSERTING RECORDS", flush=True)
                 sql = "INSERT INTO movies.movies_tags VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
-            cursor.execute("COMMIT;")
 
+            for i, row in self.personality.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = """INSERT INTO movies.personality VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+                cursor.execute(sql, tuple(row))
+            
+            for i, row in self.ratings_case6.iterrows():
+                if i == 0:
+                    print("INSERTING RECORDS", flush=True)
+                sql = "INSERT INTO movies.ratings_case6 VALUES (%s, %s, %s, %s)"
+                cursor.execute(sql, tuple(row))
+
+            cursor.execute("COMMIT;")
             cursor.close()
 
     def get_movie_info(self):
@@ -645,6 +717,7 @@ class App:
             else:
                 pass
             
+            
             g_corr, _ = pearsonr(flat_tags, flat_genres)
             r_corr, _ = pearsonr(flat_tags, ratings)
             if pd.isna(r_corr):
@@ -654,7 +727,6 @@ class App:
             r_corr_list.append(r_corr) 
         
         glabels, gdata = [], []
-
         for y, x in zip(g_corr_list, result['user_id'].unique().tolist()):
             glabels.append(f'User ID: {x}')         # Add label to user id for visualisation in Chart.js
             gdata.append({'x': x, 'y': y})     # Combine rating data columns into x,y pairs for plotting
@@ -676,14 +748,157 @@ class App:
         context['result'] = c_result
         return context
 
-
-    def print_first_10_tags(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_tags WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
     
+    def predict_aggregate_ratings(self, ratings_data):
+        """
+        We use the least squares method for making predictions.
+        """
+
+        ratings_data = [(row[0], float(row[1])) for row in ratings_data]
+        ratings_data = np.array(ratings_data)
+
+        X = ratings_data[:, 0]      # user ids
+        y = ratings_data[:, 1]      # user ratings
+
+        # List to store predictions of aggregate ratings of different preview sizes
+        preview_size_labels = []
+        actual_aggregate_ratings = []
+        predicted_aggregate_ratings = []
+
+        for preview_size in range(3, 20):
+            preview_size_labels.append(preview_size)
+            # Choose a small subset of ratings as the preview audience
+            preview_indices = np.random.choice(len(X), size=preview_size, replace=False)
+            preview_ratings = y[preview_indices]
+
+            # Remove the preview audience from the training set
+            X_train = np.delete(X, preview_indices)
+            y_train = np.delete(y, preview_indices)
+
+            # Compute coefficients of linear regression model
+            A = np.vstack([X_train, np.ones(len(X_train))]).T
+            coeffs, _, _, _ = np.linalg.lstsq(A, y_train, rcond=None)
+
+            # Make predictions for overall rating
+            X_all = np.unique(X)
+            y_all_pred = np.dot(np.vstack([X_all, np.ones(len(X_all))]).T, coeffs)
+
+            actual_aggregate_ratings.append(np.mean(y))
+            predicted_aggregate_ratings.append(np.mean(y_all_pred))
+        
+        def calculate_rmse(actual_data, predicted_data):
+            n = len(actual_data)
+            mse = sum((actual_data[i] - predicted_data[i])**2 for i in range(n)) / n
+            rmse = math.sqrt(mse)
+            return rmse
+        
+        rmse = calculate_rmse(actual_aggregate_ratings, predicted_aggregate_ratings)
+
+        return preview_size_labels, actual_aggregate_ratings, predicted_aggregate_ratings, rmse
+
+
+    # USE CASE 5 FUNCTIONS        
+    def use_case_5(self, filters):
+        cursor = self.cnx2.cursor()
+
+        if filters is None:     # This condition is activated when a GET request is issued for the webpage
+            return None
+        else:
+            base_query = ''
+            context = dict.fromkeys(['message', 'movie_title', 'actual_av', 'predicted_av'])
+
+            filters = filters.to_dict(flat=False)
+            # print(f"Filters: {filters}", flush=True)
+            
+            if 'movie_title' in filters.keys():
+                movie_title = filters['movie_title'][0]
+            
+                base_query = f"""
+                    SELECT user_ID, rating 
+                    FROM movies.movies_ratings
+                    WHERE movie_ID = (
+                        SELECT movie_ID
+                        FROM movies.movies_data
+                        WHERE title LIKE '%{movie_title}%'
+                    )
+                """
+
+                # print(f'USE CASE 5 FINAL QUERY: "{base_query}"', flush=True)
+
+                cursor.execute(base_query)
+                result = cursor.fetchall()
+                cursor.close()
+
+                preview_size_labels, actual_av_ratings, predicted_av_ratings, rmse_error = self.predict_aggregate_ratings(result)
+
+                context['preview_size_labels'] = preview_size_labels
+                context['actual_av'] = actual_av_ratings
+                context['predicted_av'] = predicted_av_ratings
+                context['movie_title'] = movie_title
+                context['message'] = f'Completed ratings prediction for {movie_title}.\nRoot mean squared error (RMSE): {rmse_error:.3f}'
+                return context
+            return None
+
+    def personality_rating_correlation(self, query_results):
+        # Cast to numpy array
+        query_results = np.array(query_results)
+        traits_cols = query_results[:, :5]
+        ratings_cols = query_results[:, 5:]
+
+        correlations = np.corrcoef(traits_cols.T, ratings_cols.T)
+        return correlations[:5, 5:]
+
+    # USE CASE 6 FUNCTIONS
+    def use_case_6(self):
+        cursor = self.cnx2.cursor()
+        base_query = 'SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating1, p.predicted_rating2, p.predicted_rating3, \
+             p.predicted_rating4, p.predicted_rating5, p.predicted_rating6, p.predicted_rating7, p.predicted_rating8, p.predicted_rating9, p.predicted_rating10, p.predicted_rating11, \
+                 p.predicted_rating12 FROM movies.personality AS p'
+        
+        cursor.execute(base_query)
+        result = cursor.fetchall()
+        correlation_result = self.personality_rating_correlation(query_results=result)
+        
+        # Return a context object for rendering in the template
+        context = {
+            'correlation_result': correlation_result,
+            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion']
+        }
+        return context
+
+    def use_case_6_part2(self):
+        result = []
+        cursor = self.cnx2.cursor()
+        base_query = ["SELECT DISTINCT p.userid, p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
+                      ", ratings_case6.rating, ratings_case6.tstamp, movies_data.genre, p.enjoy_watching FROM personality p JOIN ratings_case6 ON p.userid = ratings_case6.user_ID AND ",
+                      " = ratings_case6.movie_ID JOIN movies_data ON ", " = movies_data.movie_Id"]
+        repeat = ["p.movie1", "p.movie2", "p.movie3", "p.movie4", "p.movie5", "p.movie6", "p.movie7", "p.movie8", "p.movie9", "p.movie10", 
+                  "p.movie11", "p.movie12"]
+        pre = ["p.predicted_rating1", "p.predicted_rating2", "p.predicted_rating3", "p.predicted_rating4", "p.predicted_rating5", "p.predicted_rating6",
+                "p.predicted_rating7", "p.predicted_rating8", "p.predicted_rating9", "p.predicted_rating10", "p.predicted_rating11", "p.predicted_rating12"]
+        for x in range(len(repeat)):
+            query = base_query[0] + pre[x] + base_query[1] + repeat[x] + base_query[2] + repeat[x] + base_query[3]
+            cursor.execute(query)
+            result.append(cursor.fetchall())
+        cursor.execute("SELECT DISTINCT userid FROM personality;")
+        users = cursor.fetchall()
+        users = [x[0] for x in users]
+        temp = []
+        for x in result:
+            temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
+        df = pd.concat(temp)
+        unique_genre = self.get_unique_genres()
+        traits = df[['openness', 'agreeableness', 'emotional_stability', 'conscientiousness', 'extraversion']].values
+        en_gen = df[['userid', 'enjoy_watching', 'genre']]
+        traits = np.array(traits)
+        t = []
+        for x in en_gen['userid']:
+            en_gen_g = en_gen[en_gen['userid'] == x]
+            t.append(en_gen_g.values)
+
+        return t
+
+
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
@@ -845,9 +1060,8 @@ def uc4(page_number):
         page_number = page_number,
     )
 
-
-@app.route("/view_links")
-def get_links():
+@app.route("/render_use_case_5", methods=["GET", "POST"])
+def uc_5():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -861,15 +1075,20 @@ def get_links():
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_links.html", data=app1.print_first_10_links())
+        print("Error while connecting: ", e)
+    
+    if request.method == "POST":
+        context = app1.use_case_5(filters=request.form)
+    else:
+        context = app1.use_case_5(filters=None)
+    
+    return render_template(
+        'use_case_5.html',
+        context=context,
+    )
 
-@app.route("/view_tags")
-def get_tags():
+@app.route("/render_use_case_6", methods=["GET", "POST"])
+def uc_6():
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -883,13 +1102,12 @@ def get_tags():
     try:
         app1.connect_newuser("movies")
     except Error as e:
-        print("Error while connecting: ", e)    
-    if app1.nconnected != False:
-        app1.create_table_with_data()
-        #something = app1.print_first_10()
-        #app1.close_nconnect()
-    return render_template("view_tags.html", data=app1.print_first_10_tags())
-
+        print("Error while connecting: ", e)
+    result = app1.use_case_6()
+    temp = app1.use_case_6_part2()
+    return render_template(
+        'use_case_6.html', context = result, temp = temp
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

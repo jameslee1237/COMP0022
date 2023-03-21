@@ -1,0 +1,49 @@
+/* CSS for use case 3 styling */
+.title {
+    padding-top: 2.5rem;
+}
+
+.use-case-2-form {
+    width: 100%;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+}
+
+.use-case-2-results-table {
+    width: 100%;
+    table-layout: auto;
+}
+
+.align-rows {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+td, th {
+    padding-right: calc(10px + 1%) !important;
+}
+
+.genre-list > .genre-tag {
+    display: inline-block;
+    margin-right: 3px;
+    margin-bottom: 2px;
+    padding: 4px 10px;
+    background-color: greenyellow;
+    border-radius: 7px;
+}
+
+.message {
+    width: 100%;
+    padding: 10px 25px;
+    border-radius: 5px;
+    background-color: lightblue;
+}
+
+
+@media only screen and (max-width:768px) {
+    .use-case-2-results {
+        font-size: 12px;
+        overflow-x: scroll;
+    }
+}
