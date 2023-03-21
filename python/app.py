@@ -24,7 +24,7 @@ class App:
         self.TABLES = {}
         self.pdata = ""
         self.ratings_data = ""
-        self.links_data = ""
+        self.info_data = ""
         self.tags_data = ""
 
     def set_config(self):
@@ -45,10 +45,6 @@ class App:
         self.ratings_data = pd.read_csv(r"./ratings.csv", index_col=False, delimiter=',')
         self.ratings_data.fillna(0)
         self.ratings_data.head()
-        
-        self.links_data = pd.read_csv(r"./links.csv", index_col=False, delimiter=',')
-        self.links_data.fillna(0,inplace=True)
-        self.links_data.head()
         
         self.tags_data = pd.read_csv(r"./tags.csv", index_col=False, delimiter=',')
         self.tags_data.fillna(0,inplace=True)
@@ -113,7 +109,7 @@ class App:
             # Create SQL for creating tables
             cursor.execute("DROP TABLE IF EXISTS movies_data;")
             cursor.execute("DROP TABLE IF EXISTS movies_ratings;")
-            cursor.execute("DROP TABLE IF EXISTS movies_links;")
+            cursor.execute("DROP TABLE IF EXISTS movies_info;")
             cursor.execute("DROP TABLE IF EXISTS movies_tags;")
             cursor.execute("DROP TABLE IF EXISTS personality;")
             cursor.execute("DROP TABLE IF EXISTS ratings_case6;")
@@ -126,9 +122,6 @@ class App:
                 "  content VARCHAR(255) NOT NULL,"
                 "  director VARCHAR(255) NOT NULL,"
                 "  lead_actor VARCHAR(255) NOT NULL,"
-                "  rotten_tomatoes VARCHAR(255) NOT NULL,"
-                "  rating VARCHAR(255) NOT NULL,"
-                "  tags VARCHAR(2000) NOT NULL,"
                 "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_ratings'] = (
@@ -139,11 +132,12 @@ class App:
                 "  timestamp VARCHAR(255) NOT NULL,"
                 "  PRIMARY KEY(user_ID, movie_ID));"
             )
-            self.TABLES['movies_links'] = (
-                "CREATE TABLE movies_links ("
+            self.TABLES['movies_info'] = (
+                "CREATE TABLE movies_info ("
                 "  movie_ID INT NOT NULL,"
-                "  imdbId VARCHAR(255) NOT NULL,"
-                "  tmdbId VARCHAR(255) NOT NULL,"
+                "  rotten_tomatoes VARCHAR(255) NOT NULL,"
+                "  rating VARCHAR(255) NOT NULL,"
+                "  tags VARCHAR(2000) NOT NULL,"
                 "  PRIMARY KEY(movie_ID));"
             )
             self.TABLES['movies_tags'] = (
@@ -216,9 +210,8 @@ class App:
             
 
             #format pdata
-            if len(self.pdata.columns.tolist()) < 9:
-                self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
-                self.pdata.fillna("N/A")
+            if len(self.pdata.columns.tolist()) < 6:
+                self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['content', 'director', 'lead_actor'], axis=1, fill_value="N/A")
             else:
                 pass
             
@@ -229,7 +222,7 @@ class App:
                 row = row.fillna(0)
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
-                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                sql = "INSERT INTO movies.movies_data VALUES (%s, %s, %s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
 
             
@@ -240,10 +233,10 @@ class App:
                 cursor.execute(sql, tuple(row))
 
 
-            for i, row in self.links_data.iterrows():
+            for i, row in self.info_data.iterrows():
                 if i == 0:
                     print("INSERTING RECORDS", flush=True)
-                sql = "INSERT INTO movies.movies_links VALUES (%s, %s, %s)"
+                sql = "INSERT INTO movies.movies_info VALUES (%s, %s, %s, %s)"
                 cursor.execute(sql, tuple(row))
 
                 
@@ -284,7 +277,7 @@ class App:
             if result != []:
                 if int(result2[0][0]) == 9742:
                     self.check = False
-                    if count < 9:
+                    if count < 6:
                         self.check = True
                         pass
                     else:
@@ -304,7 +297,9 @@ class App:
         rdata.head()
         titles = rdata['movie_title'].tolist()
         dbtitles = self.pdata['title'].tolist()
-        self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['content', 'director', 'lead_actors', 'rotten_tomato'], fill_value=0, axis=1)
+        self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['content', 'director', 'lead_actors'], fill_value=0, axis=1)
+        self.info_data = pd.DataFrame(self.pdata['movieId'], columns=['movieId'])
+        self.info_data = self.info_data.reindex(self.info_data.columns.tolist() + ['rotten_tomatoes', 'ratings', 'tags'], fill_value=0, axis=1)
         count = 0
         for title in dbtitles:
             ntitle = title[:title.rfind('(')][:-1]
@@ -322,23 +317,26 @@ class App:
                 self.pdata.loc[self.pdata['title'] == title, 'content'] = w
                 self.pdata.loc[self.pdata['title'] == title, 'director'] = x
                 self.pdata.loc[self.pdata['title'] == title, 'lead_actors'] = y
-                self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = score
+                movie_id = self.pdata.loc[self.pdata['title'] == title, 'movieId'].values[0]
+                self.info_data.loc[self.info_data['movieId'] == movie_id, 'rotten_tomatoes'] = score
             else:
                 self.pdata.loc[self.pdata['title'] == title, 'content'] = "N/A"
                 self.pdata.loc[self.pdata['title'] == title, 'director'] = "N/A"
                 self.pdata.loc[self.pdata['title'] == title, 'lead_actors'] = "N/A"
-                self.pdata.loc[self.pdata['title'] == title, 'rotten_tomato'] = "N/A"
+                movie_id = self.pdata.loc[self.pdata['title'] == title, 'movieId'].values[0]
+                self.info_data.loc[self.info_data['movieId'] == movie_id, 'rotten_tomatoes'] = "N/A"
 
     def fill_rating(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT rating FROM movies_data WHERE movie_ID = 1;")
+        cursor.execute("SELECT rating FROM movies_info WHERE movie_ID = 1;")
         result = cursor.fetchone()[0]
-        if result != "N/A":
+        if str(result) != "0":
             pass
         else:
-            cursor.execute("""UPDATE movies_data m
-                              INNER JOIN (SELECT movies_data.movie_Id, ROUND(AVG(movies_ratings.rating), 2) as rating 
-                              FROM movies_ratings, movies_data WHERE movies_data.movie_Id = movies_ratings.movie_Id
+            print("im here", flush=True)
+            cursor.execute("""UPDATE movies_info m
+                              INNER JOIN (SELECT movies_info.movie_Id, ROUND(AVG(movies_ratings.rating), 2) as rating 
+                              FROM movies_ratings, movies_info WHERE movies_info.movie_Id = movies_ratings.movie_Id
                               GROUP BY movies_ratings.movie_Id) r
                               ON m.movie_Id = r.movie_Id
                               SET m.rating = r.rating;""")
@@ -347,14 +345,15 @@ class App:
 
     def fill_tags(self):
         cursor = self.cnx2.cursor()
-        cursor.execute("SELECT tags FROM movies_data WHERE movie_ID = 1;")
+        cursor.execute("SELECT tags FROM movies_info WHERE movie_ID = 1;")
         result = cursor.fetchone()[0]
-        if result != "N/A":
+        if str(result) != "0":
             pass
         else:
-            cursor.execute("""UPDATE movies_data m INNER JOIN (
-                              SELECT movies_data.movie_Id, GROUP_CONCAT(DISTINCT tag) as tags
-                              FROM movies_tags, movies_data WHERE movies_data.movie_Id = movies_tags.movie_Id
+            print("im here", flush=True)
+            cursor.execute("""UPDATE movies_info m INNER JOIN (
+                              SELECT movies_info.movie_Id, GROUP_CONCAT(DISTINCT tag) as tags
+                              FROM movies_tags, movies_info WHERE movies_info.movie_Id = movies_tags.movie_Id
                               GROUP BY movies_tags.movie_Id) r
                               ON m.movie_Id = r.movie_Id
                               SET m.tags = r.tags;""")
@@ -377,7 +376,6 @@ class App:
             for genre in str(row[0]).split(sep='|'):
                 unique_genres[genre] = None
 
-        print(f"All possible genres: {list(unique_genres.keys())}", flush=True)
         cursor.close()
         return sorted(list(unique_genres.keys()))
     
@@ -897,14 +895,6 @@ class App:
             t.append(en_gen_g.values)
 
         return t
-
-
-    def print_first_10_links(self):
-        cursor = self.cnx2.cursor()
-        cursor.execute("SELECT * FROM movies.movies_links WHERE movie_ID < 10;")
-        result = cursor.fetchall()
-        cursor.close()
-        return result
 
     def close_nconnect(self):
         self.cnx2.close()
