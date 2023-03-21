@@ -656,7 +656,7 @@ class App:
                           GROUP_CONCAT(DISTINCT md.rating) as rating
                           FROM movies_tags mt
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
-                          GROUP BY mt.user_ID, mt.movie_ID LIMIT 20;""")
+                          GROUP BY mt.user_ID, mt.movie_ID;""")
         result = cursor.fetchall()
         cursor.execute("""SELECT mt.tag, GROUP_CONCAT(movies_data.title) as title, GROUP_CONCAT(movies_data.genre) as genre
                           FROM movies_tags mt
