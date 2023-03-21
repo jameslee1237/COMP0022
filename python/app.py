@@ -416,7 +416,7 @@ class App:
 
         cursor = self.cnx2.cursor()
         query_params = ''
-        base_query = 'SELECT * FROM movies.movies_data'
+        base_query = 'SELECT * FROM movies.movies_data JOIN movies_info ON movies_data.movie_ID = movies_info.movie_ID'
 
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
             pass
