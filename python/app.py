@@ -886,10 +886,12 @@ class App:
         for x in result:
             temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
         df = pd.concat(temp)
+
         unique_genre = self.get_unique_genres()
         traits = np.array(df[["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]])
         en_gen = df[['enjoy_watching', 'genre']]
         t = []
+
         for genre in unique_genre:
             en_gen_g = en_gen[en_gen['genre'].str.contains(genre, regex=False)]
             en_gen_g_avg = en_gen_g['enjoy_watching'].sum() / len(en_gen_g['enjoy_watching'])
@@ -902,16 +904,14 @@ class App:
         t = t.astype(np.float64)
         t = np.tile(t, (3015, 1))
         traits = traits.astype(np.float64)
-        corr, _ = pearsonr(t, traits)
-        print(corr, flush=True)
         correlation = np.corrcoef(traits.T, t.T)
-        correlation = correlation[:5, 5:]
+        # correlation = correlation[:5, 5:]
+        print(correlation, flush=True)
         context = {
-            'correlation_result': correlation,
-            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion'],
-            'genre': unique_genre
+            'correlation_result2': correlation,
+            'genres': unique_genre
         }
-        return result
+        return context
 
 
     def print_first_10_links(self):
@@ -1109,9 +1109,12 @@ def uc_6():
     except Error as e:
         print("Error while connecting: ", e)
     result = app1.use_case_6()
-    temp = app1.use_case_6_part2()
+    result_part2 = app1.use_case_6_part2()
+
+    # Combine context dictionaries from each subcase
+    context = result | result_part2
     return render_template(
-        'use_case_6.html', context = result, temp = temp
+        'use_case_6.html', context=context
     )
 
 if __name__ == "__main__":
