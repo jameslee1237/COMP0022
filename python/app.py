@@ -646,22 +646,22 @@ class App:
                     return context       
             
     #USE CASE 4 FUNCTION
-    def use_case_4(self):
-        base_query = ''
+    def use_case_4(self, page_number):
         context = dict.fromkeys(['user', 'all_data', 'result'])
         cursor = self.cnx2.cursor()
+
         cursor.execute("""SELECT mt.user_ID, mt.movie_ID, 
                           GROUP_CONCAT(mt.tag) as tag,
                           GROUP_CONCAT(DISTINCT md.genre) as genres,
                           GROUP_CONCAT(DISTINCT md.rating) as rating
                           FROM movies_tags mt
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
-                          GROUP BY mt.user_ID, mt.movie_ID;""")
+                          GROUP BY mt.user_ID, mt.movie_ID LIMIT 20;""")
         result = cursor.fetchall()
         cursor.execute("""SELECT mt.tag, GROUP_CONCAT(movies_data.title) as title, GROUP_CONCAT(movies_data.genre) as genre
                           FROM movies_tags mt
                           INNER JOIN movies_data ON mt.movie_Id = movies_data.movie_Id
-                          GROUP BY mt.tag;""")
+                          GROUP BY mt.tag LIMIT 20 OFFSET """ + str((page_number-1)*20) + """;""")
         c_result = cursor.fetchall()
         idx = ["user_id", "movie_id", "tags", "genres", "rating"]
         result = pd.DataFrame(result, columns=idx)
@@ -1029,8 +1029,8 @@ def uc_3():
         headings_display=headings_display
     )
 
-@app.route("/render_use_case_4", methods=["GET", "POST"])
-def uc4():
+@app.route("/render_use_case_4/<int:page_number>", methods=["GET", "POST"])
+def uc4(page_number):
     app1 = App()
     app1.set_config()
     app1.get_csv_data()
@@ -1045,10 +1045,20 @@ def uc4():
         app1.connect_newuser("movies")
     except Error as e:
         print("Error while connecting: ", e)
-    item = app1.use_case_4()
-    heading = list(item.keys())
-    l = len(heading)
-    return render_template("use_case_4.html", result=item['result'], heading=heading, len=l, all_data=item['all_data'])
+
+    headings_display = ['User ID', 'Movie Titles', 'Genres']
+
+    item = app1.use_case_4(page_number)
+    l = len(headings_display)
+
+    return render_template(
+        'use_case_4.html', 
+        result=item['result'], 
+        heading = headings_display, 
+        len=l, 
+        all_data=item['all_data'],
+        page_number = page_number,
+    )
 
 @app.route("/render_use_case_5", methods=["GET", "POST"])
 def uc_5():
