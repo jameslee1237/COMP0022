@@ -651,9 +651,10 @@ class App:
         cursor.execute("""SELECT mt.user_ID, mt.movie_ID, 
                           GROUP_CONCAT(mt.tag) as tag,
                           GROUP_CONCAT(DISTINCT md.genre) as genres,
-                          GROUP_CONCAT(DISTINCT md.rating) as rating
+                          GROUP_CONCAT(DISTINCT mi.rating) as rating
                           FROM movies_tags mt
                           INNER JOIN movies_data md ON mt.movie_ID = md.movie_ID
+                          INNER JOIN movies_info mi ON mt.movie_ID = mi.movie_ID
                           GROUP BY mt.user_ID, mt.movie_ID;""")
         result = cursor.fetchall()
         cursor.execute("""SELECT mt.tag, GROUP_CONCAT(movies_data.title) as title, GROUP_CONCAT(movies_data.genre) as genre
