@@ -725,7 +725,6 @@ class App:
             r_corr_list.append(r_corr) 
         
         glabels, gdata = [], []
-
         for y, x in zip(g_corr_list, result['user_id'].unique().tolist()):
             glabels.append(f'User ID: {x}')         # Add label to user id for visualisation in Chart.js
             gdata.append({'x': x, 'y': y})     # Combine rating data columns into x,y pairs for plotting
@@ -860,22 +859,15 @@ class App:
     def use_case_6_part2(self):
         result = []
         cursor = self.cnx2.cursor()
-        base_query = ["SELECT p.userid, p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
+        base_query = ["SELECT DISTINCT p.userid, p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, " , 
                       ", ratings_case6.rating, ratings_case6.tstamp, movies_data.genre, p.enjoy_watching FROM personality p JOIN ratings_case6 ON p.userid = ratings_case6.user_ID AND ",
                       " = ratings_case6.movie_ID JOIN movies_data ON ", " = movies_data.movie_Id"]
         repeat = ["p.movie1", "p.movie2", "p.movie3", "p.movie4", "p.movie5", "p.movie6", "p.movie7", "p.movie8", "p.movie9", "p.movie10", 
                   "p.movie11", "p.movie12"]
         pre = ["p.predicted_rating1", "p.predicted_rating2", "p.predicted_rating3", "p.predicted_rating4", "p.predicted_rating5", "p.predicted_rating6",
                 "p.predicted_rating7", "p.predicted_rating8", "p.predicted_rating9", "p.predicted_rating10", "p.predicted_rating11", "p.predicted_rating12"]
-        user = ["8e7cebf9a234c064b75016249f2ac65e", "77c7d756a093150d4377720abeaeef76", "b7e8a92987a530cc368719a0e60e26a3", "92561f21446e017dd6b68b94b23ad5b7",
-                "030001ac2145a938b07e686a35a2d638", "f91b2fb085d0feb47b86fc81b10207ee", "f7b0502be8c86203ce6acaffe59f993a", "36f31ef9879b4de96977aeba94878581",
-                "653bb2f69ddd19e1cf1f9e1871916d71", "89d365a0d0f1a80ae8d079079a078155", "4d92401ed253aab37fa28a68d5d24d87", "875afaef12d7872b644948db1bb3040a"]
         for x in range(len(repeat)):
             query = base_query[0] + pre[x] + base_query[1] + repeat[x] + base_query[2] + repeat[x] + base_query[3]
-        #cursor.execute(SELECT p.openness, p.agreeableness, p.emotional_stability, p.conscientiousness, p.extraversion, p.predicted_rating2, 
-        # ratings_case6.rating, ratings_case6.tstamp, movies_data.genre FROM personality p JOIN ratings_case6 ON p.userid = 
-        # ratings_case6.user_ID AND p.movie2 = ratings_case6.movie_ID JOIN movies_data ON p.movie2 = movies_data.movie_Id 
-        # WHERE p.userid = "8e7cebf9a234c064b75016249f2ac65e";
             cursor.execute(query)
             result.append(cursor.fetchall())
         cursor.execute("SELECT DISTINCT userid FROM personality;")
@@ -885,16 +877,32 @@ class App:
         for x in result:
             temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
         df = pd.concat(temp)
-        LE = LabelEncoder()
         unique_genre = self.get_unique_genres()
-        LE.fit(unique_genre)
         traits = np.array(df[["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]])
         en_gen = df[['enjoy_watching', 'genre']]
-        en_gen['genre'] = en_gen['genre'].apply(lambda x: x.split("|"))
-        en_gen['genre'] = en_gen['genre'].apply(lambda x: [LE.transform([i]) for i in x])
-        en_gen = np.array(en_gen)
-        data = [en_gen, traits]
+        t = []
+        for genre in unique_genre:
+            en_gen_g = en_gen[en_gen['genre'].str.contains(genre, regex=False)]
+            en_gen_g_avg = en_gen_g['enjoy_watching'].sum() / len(en_gen_g['enjoy_watching'])
+            if pd.isna(en_gen_g_avg):
+                en_gen_g_avg = 0
+            t.append([genre, en_gen_g_avg])
+        t = np.array(t)
+        t = t[:, 1]
+        t = t.astype(np.float64)
+        t = np.tile(t, (3015, 1))
+        traits = traits.astype(np.float64)
+        corr, _ = pearsonr(t, traits)
+        print(corr, flush=True)
+        correlation = np.corrcoef(traits.T, t.T)
+        correlation = correlation[:5, 5:]
+        context = {
+            'correlation_result': correlation,
+            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion'],
+            'genre': unique_genre
+        }
         return result
+
 
     def print_first_10_links(self):
         cursor = self.cnx2.cursor()
