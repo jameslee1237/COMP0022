@@ -2,6 +2,7 @@ import mysql.connector
 import pandas as pd
 import numpy as np
 import itertools
+import math
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
@@ -783,8 +784,16 @@ class App:
 
             actual_aggregate_ratings.append(np.mean(y))
             predicted_aggregate_ratings.append(np.mean(y_all_pred))
+        
+        def calculate_rmse(actual_data, predicted_data):
+            n = len(actual_data)
+            mse = sum((actual_data[i] - predicted_data[i])**2 for i in range(n)) / n
+            rmse = math.sqrt(mse)
+            return rmse
+        
+        rmse = calculate_rmse(actual_aggregate_ratings, predicted_aggregate_ratings)
 
-        return preview_size_labels, actual_aggregate_ratings, predicted_aggregate_ratings
+        return preview_size_labels, actual_aggregate_ratings, predicted_aggregate_ratings, rmse
 
 
     # USE CASE 5 FUNCTIONS        
@@ -819,13 +828,13 @@ class App:
                 result = cursor.fetchall()
                 cursor.close()
 
-                preview_size_labels, actual_av_ratings, predicted_av_ratings = self.predict_aggregate_ratings(result)
+                preview_size_labels, actual_av_ratings, predicted_av_ratings, rmse_error = self.predict_aggregate_ratings(result)
 
                 context['preview_size_labels'] = preview_size_labels
                 context['actual_av'] = actual_av_ratings
                 context['predicted_av'] = predicted_av_ratings
                 context['movie_title'] = movie_title
-                context['message'] = f'Completed ratings prediction for {movie_title}'
+                context['message'] = f'Completed ratings prediction for {movie_title}.\nRoot mean squared error (RMSE): {rmse_error:.3f}'
                 return context
             return None
 

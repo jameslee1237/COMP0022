@@ -15,7 +15,7 @@
             <p>Predicting ratings with preview</p>
         </div>
     </div>
-    <form class="use-case-2-form" action="{{ url_for('uc_5') }}" method="POST">
+    <form class="use-case-5-form" action="{{ url_for('uc_5') }}" method="POST">
         <fieldset class="row mb-2">
             <div class="col-sm-2">
                 <div class="form-floating">
@@ -26,8 +26,10 @@
         </fieldset>
         <button type="submit" class="btn btn-primary">Search</button>
     </form>
-    <div class="use-case-2-results">
+    <br>
+    <div class="use-case-5-results">
         {% if context != None %}
+            {% set message = context['message'] %}
             {% if message != None %}
                 <p class="message">{{ message }}</p>
             {% endif %}
