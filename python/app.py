@@ -943,6 +943,7 @@ def uc_1():
         # Fetch query result
         query_result = app1.use_case_1(filters=None)
 
+
     return render_template(
         'use_case_1.html',
         query_res=query_result,
