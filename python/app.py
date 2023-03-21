@@ -897,6 +897,7 @@ class App:
                 en_gen_g_avg = 0
             t.append([genre, en_gen_g_avg])
         t = np.array(t)
+        
         t = t[:, 1]
         t = t.astype(np.float64)
         t = np.tile(t, (3015, 1))
