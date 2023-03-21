@@ -465,8 +465,7 @@ class App:
     def use_case_2(self, filters):
         cursor = self.cnx2.cursor()
         query_params = ''
-        base_query = "SELECT * FROM movies.movies_data"
-
+        base_query = "SELECT * FROM movies.movies_data JOIN movies_info ON movies_data.movie_ID = movies_info.movie_ID"
         if filters is None:     # This condition is activated when a GET request is issued for the webpage
             query_params = ' LIMIT 20 OFFSET 20;'
         else:
@@ -485,7 +484,6 @@ class App:
 
         cursor.execute(base_query)
         result = cursor.fetchall()
-        print(result)
         cursor.close()
         return result
 
