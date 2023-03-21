@@ -344,7 +344,6 @@ class App:
         cursor.close()
 
 
-
     def fill_tags(self):
         cursor = self.cnx2.cursor()
         cursor.execute("SELECT tags FROM movies_info WHERE movie_ID = 1;")
@@ -477,6 +476,7 @@ class App:
             if 'search' in filters.keys():
                 movie_title = filters['search'][0]
                 query_params += f" WHERE title LIKE '%{movie_title}%'"
+
 
         # Add paginator
         # query_params += ' LIMIT 20 OFFSET 20;'
