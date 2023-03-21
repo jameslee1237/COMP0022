@@ -214,7 +214,7 @@ class App:
                 else:
                     print("OK", flush=True)
             
-            
+
             #format pdata
             if len(self.pdata.columns.tolist()) < 9:
                 self.pdata = self.pdata.reindex(self.pdata.columns.tolist() + ['rating', 'tags'], axis=1, fill_value="N/A")
@@ -888,20 +888,15 @@ class App:
             temp.append(pd.DataFrame(x, columns=["userid", "openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion", "predicted_rating", "rating", "tstamp", "genre", "enjoy_watching"]))
         df = pd.concat(temp)
         unique_genre = self.get_unique_genres()
-        for x in df['userid']:
-            corr, _ = pearsonr(df[df['userid']==x][["openness", "agreeableness", "emotional_stability", "conscientiousness", "extraversion"]], df[df['userid']==x][["enjoy_watching", "g"]])
-        
-        
-        t = t[:, 1]
-        t = t.astype(np.float64)
-        traits = traits.astype(np.float64)
-        print(t, traits[:20], flush=True)
-        context = {
-            'correlation_result': correlation,
-            'personality_traits': ['Openness', 'Agreeableness', 'Emotional Stability', 'Conscientiousness', 'Extraversion'],
-            'genre': unique_genre
-        }
-        return result
+        traits = df[['openness', 'agreeableness', 'emotional_stability', 'conscientiousness', 'extraversion']].values
+        en_gen = df[['userid', 'enjoy_watching', 'genre']]
+        traits = np.array(traits)
+        t = []
+        for x in en_gen['userid']:
+            en_gen_g = en_gen[en_gen['userid'] == x]
+            t.append(en_gen_g.values)
+
+        return t
 
 
     def print_first_10_links(self):

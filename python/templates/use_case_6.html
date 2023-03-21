@@ -36,29 +36,10 @@
                 {% endfor %}
             </tbody>
         </table>
-        <table class="table use-case-6-1-table">
-            {% set personality_traits = context['personality_traits'] %}
-            {% set correlation_result2 = context['correlation_result2'] %}
-            {% set genre = context['genres'] %}
-            <thead>
-                <th>Personality Trait/Genre.</th>
-                {% for i in range(0, 20) %}
-                    <th scope="col">{{ genre[i] }}</th>
-                {% endfor %}
-            </thead>
-            <tbody>
-                {% for j in range(personality_traits|length) %}
-                    <tr>
-                        <td>{{ personality_traits[j] }}</td>
-                        {% for k in correlation_result2[j] %}
-                            <td>{{ '%.2f'|format(k) }}</td>
-                        {% endfor %}
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
     </div>
     <div>
-        {{ temp }}
+        {% for row in temp %}
+        <p>{{ row}} </p>
+        {% endfor %}
     </div>
 {% endblock %}
