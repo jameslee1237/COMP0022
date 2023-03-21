@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import itertools
 import math
+import re
 from numpy import nan
 from mysql.connector import Error
 from mysql.connector import errorcode
@@ -475,6 +476,8 @@ class App:
 
             if 'search' in filters.keys():
                 movie_title = filters['search'][0]
+                pattern = r'[^a-zA-Z0-9\s]'
+                sanitized = re.sub(pattern, '', movie_title)
                 query_params += f" WHERE title LIKE %s"
 
         # Add paginator
@@ -482,7 +485,6 @@ class App:
         if movie_title != '':
             base_query += query_params
             print(f'USE CASE 2 FINAL QUERY: "{base_query}"', flush=True)
-
             cursor.execute(base_query, ('%'+movie_title+'%',))
             result = cursor.fetchall()
             cursor.close()
