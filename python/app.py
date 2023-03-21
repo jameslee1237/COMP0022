@@ -952,7 +952,6 @@ def uc_1():
         headings_display=headings_display
     )
 
-
 @app.route("/render_use_case_2", methods=["GET", "POST"])
 def uc_2():
     app1 = App()
