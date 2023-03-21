@@ -463,6 +463,7 @@ class App:
 
     # USE CASE 2 FUNCTIONS
     def use_case_2(self, filters):
+        movie_title = ''
         cursor = self.cnx2.cursor()
         query_params = ''
         base_query = "SELECT * FROM movies.movies_data JOIN movies_info ON movies_data.movie_ID = movies_info.movie_ID"
@@ -474,17 +475,22 @@ class App:
 
             if 'search' in filters.keys():
                 movie_title = filters['search'][0]
-                query_params += f" WHERE title LIKE '%{movie_title}%'"
-
+                query_params += f" WHERE title LIKE %s"
 
         # Add paginator
         # query_params += ' LIMIT 20 OFFSET 20;'
-        base_query += query_params + ';'
-        print(f'USE CASE 2 FINAL QUERY: "{base_query}"', flush=True)
+        if movie_title != '':
+            base_query += query_params
+            print(f'USE CASE 2 FINAL QUERY: "{base_query}"', flush=True)
 
-        cursor.execute(base_query)
-        result = cursor.fetchall()
-        cursor.close()
+            cursor.execute(base_query, ('%'+movie_title+'%',))
+            result = cursor.fetchall()
+            cursor.close()
+        else:
+            base_query = "SELECT * FROM movies.movies_data JOIN movies_info ON movies_data.movie_ID = movies_info.movie_ID LIMIT 20 OFFSET 20;"
+            cursor.execute(base_query)
+            result = cursor.fetchall()
+            cursor.close()
         return result
 
 
